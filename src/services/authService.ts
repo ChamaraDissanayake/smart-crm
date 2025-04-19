@@ -1,5 +1,6 @@
 import api from './api';
 import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
 
 interface UserData {
     email: string;
@@ -31,6 +32,15 @@ interface CheckEmailResponse {
     message: string;
 };
 
+interface DecodedToken {
+    type: string;
+    userId: string;
+    email: string;
+    isVerified?: boolean;
+    exp: number;
+    iat: number;
+}
+
 export const AuthService = {
     async login(email: string, password: string): Promise<LoginResponse> {
         try {
@@ -44,8 +54,8 @@ export const AuthService = {
             }
             return response.data;
         } catch (error) {
-            const err = error as ApiError;
-            throw new Error(err.response?.data?.message || 'Login failed');
+            console.error('Login failed:', error);
+            throw error;
         }
     },
 
@@ -74,6 +84,29 @@ export const AuthService = {
         }
     },
 
+    async forgotPassword(email: string): Promise<void> {
+        try {
+            console.log('Sending password reset request for ', email);
+            await api.post('/user/request-password-reset', { email });
+        } catch (error) {
+            const err = error as ApiError;
+            throw new Error(err.response?.data?.message || 'Verification email send failed');
+        }
+    },
+
+    async resetPassword(token: string, newPassword: string) {
+        try {
+            const response = await api.post('/user/reset-password', {
+                token,
+                newPassword,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Reset password failed:', error);
+            throw error;
+        }
+    },
+
     logout(): void {
         Cookies.remove('authToken');
         window.location.href = '/login';
@@ -84,9 +117,24 @@ export const AuthService = {
         return token ? { token } : null;
     },
 
-    async verifyEmail(token: string): Promise<{ isVerified: boolean }> {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/check-user-verification?token=${token}`);
+    async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: string }> {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/check-user-verification?email=${email}`);
         return res.json();
-    }
+    },
+
+    async verifyEmail(token: string): Promise<{ isVerified: boolean }> {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/verify-email?token=${token}`);
+        return res.json();
+    },
+
+    decodeToken(token: string): DecodedToken {
+        if (token) {
+            return jwtDecode<DecodedToken>(token);
+        } else {
+            throw new Error('Token is not provided');
+        }
+    },
+
+
 
 };

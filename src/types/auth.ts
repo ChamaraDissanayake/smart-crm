@@ -23,7 +23,3 @@ export interface LoginResponse {
     verified: boolean;
   };
 }
-
-export interface VerifyEmailResponse {
-  message: string;
-}
