@@ -1,33 +1,41 @@
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const api: AxiosInstance = axios.create({
+const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
 });
 
-// Request interceptor with proper typing
-api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-        const token = Cookies.get('authToken');
-        if (token) {
-            config.headers = config.headers || {};
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error: AxiosError) => {
-        return Promise.reject(error);
-    }
-);
+// List of routes that shouldn't trigger 401 redirect
+const AUTH_ROUTES = [
+    '/user/login',
+    '/user/register',
+    '/user/verify-email',
+    '/user/forgot-password',
+    '/user/reset-password',
+    '/user/resend-verification-email',
+    // Add other auth routes as needed
+];
 
-// Response interceptor with proper typing
+api.interceptors.request.use((config) => {
+    const token = Cookies.get('authToken');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 api.interceptors.response.use(
-    (response: AxiosResponse) => response,
-    (error: AxiosError) => {
-        if (error.response?.status === 401) {
+    (response) => response,
+    (error) => {
+        const isAuthRoute = AUTH_ROUTES.some(route =>
+            error.config.url?.includes(route)
+        );
+
+        if (error.response?.status === 401 && !isAuthRoute) {
             Cookies.remove('authToken');
-            window.location.href = '/login';
+            window.location.href = '/signin';
         }
+
         return Promise.reject(error);
     }
 );
