@@ -20,7 +20,7 @@ const VerifyEmailPage = () => {
         maxAttempts,
         formatTime,
         startCooldown,
-    } = useResendTimer(3, 120);
+    } = useResendTimer(3, 8);
 
     const resendVerificationEmail = () => {
         if (resendAttempts >= maxAttempts) {
