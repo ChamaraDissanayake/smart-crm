@@ -16,6 +16,11 @@ export const CompanyService = {
         return res.data;
     },
 
+    updateCompanyPlan: async (companyId: number, planId: string) => {
+        const res = await api.patch(`/company/update-plan/${companyId}`, { planId });
+        return res.data;
+    },
+
     // Get All Companies for Current User
     getUserCompanies: async () => {
         const res = await api.get('/company/user-companies');

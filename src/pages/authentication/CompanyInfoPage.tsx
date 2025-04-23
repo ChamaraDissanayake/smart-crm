@@ -31,10 +31,9 @@ const CompanyInfoPage = () => {
                 throw new Error('Something went wrong. Please try again.');
             }
             const response = await CompanyService.createCompany(userId, formData);
-            console.log('Chamara', response);
 
             toast.success('Company details saved!');
-            navigate('/choose-plan');
+            navigate('/choose-plan?companyId=' + response.id);
         } catch (error) {
             handleError(error, true);
         } finally {

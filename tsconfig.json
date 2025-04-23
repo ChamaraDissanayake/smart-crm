@@ -9,6 +9,12 @@
     }
   ],
   "compilerOptions": {
+    "baseUrl": ".", // Needed for path aliases
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "typeRoots": [
       "./node_modules/@types",
       "./src"

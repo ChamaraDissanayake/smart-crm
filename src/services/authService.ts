@@ -135,6 +135,4 @@ export const AuthService = {
         }
     },
 
-
-
 };

@@ -157,7 +157,7 @@ const SignUpPage = () => {
 
     return (
         <>
-            <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-300 to-white">
+            <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-300 to-white">
                 <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-xl">
                     <h2 className="mb-6 text-2xl font-bold text-blue-800">
                         {emailExists ? 'Welcome back!' : 'Create Your Account'}
