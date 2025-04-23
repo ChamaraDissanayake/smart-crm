@@ -41,15 +41,6 @@ export const OpportunityService = {
 
     getLeads: (): Lead[] => {
         const contacts = OpportunityService.getContacts();
-        // return [
-        //     { id: 1, name: 'Website Redesign Project', contact: contacts[0], stage: 'New', expectedRevenue: 15000, priority: 'high' },
-        //     { id: 2, name: 'E-commerce Platform', contact: contacts[1], stage: 'Qualified', expectedRevenue: 25000, priority: 'medium' },
-        //     { id: 3, name: 'Mobile App Development', contact: contacts[2], stage: 'Proposition', expectedRevenue: 35000, priority: 'high' },
-        //     { id: 4, name: 'Digital Marketing Campaign', contact: contacts[3], stage: 'New', expectedRevenue: 10000, priority: 'low' },
-        //     { id: 5, name: 'CRM Implementation', contact: contacts[4], stage: 'Qualified', expectedRevenue: 20000, priority: 'medium' },
-        //     { id: 6, name: 'Cloud Migration', contact: contacts[0], stage: 'Won', expectedRevenue: 40000, priority: 'high' },
-        //     { id: 7, name: 'Data Analytics', contact: contacts[1], stage: 'Lost', expectedRevenue: 18000, priority: 'medium' },
-        // ];
         return generateLeads(contacts);
     },
 
@@ -64,6 +55,14 @@ export const OpportunityService = {
             priority: leadData.priority
         };
         return Promise.resolve(newLead);
+    },
+
+    createContact: (contactData: Omit<Contact, 'id'>): Promise<Contact> => {
+        const newContact: Contact = {
+            id: Math.max(0, ...OpportunityService.getContacts().map(c => c.id)) + 1,
+            ...contactData
+        };
+        return Promise.resolve(newContact);
     },
 
     updateLeadStage: (leadId: number, newStage: string): Promise<boolean> => {

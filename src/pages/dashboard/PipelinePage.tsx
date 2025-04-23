@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
-import { OpportunityService, Lead, Contact, NewLeadData } from '../..//services/opportunityService';
+import {
+    OpportunityService,
+    Lead,
+    Contact,
+    NewLeadData,
+} from '../../services/opportunityService';
 import { CreateLeadModal } from '../../components/CreateLeadModal';
+import { CreateContactModal } from '../../components/CreateContactModal';
 import { Button } from '@/components/ui/button';
 
-const DashboardPage = () => {
+const PipelinePage = () => {
     const [stages, setStages] = useState<string[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
     const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
 
     useEffect(() => {
@@ -26,13 +33,22 @@ const DashboardPage = () => {
         }
     };
 
+    const handleCreateContact = async (contactData: Omit<Contact, 'id'>) => {
+        try {
+            const newContact = await OpportunityService.createContact(contactData);
+            setContacts([...contacts, newContact]);
+        } catch (error) {
+            console.error('Failed to create contact:', error);
+        }
+    };
+
     const handleDragStart = (lead: Lead) => {
         setDraggedLead(lead);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>, stage: string) => {
         e.preventDefault();
-        console.log(stage);
+        console.log(`Dragging over ${stage}`);
 
     };
 
@@ -48,14 +64,13 @@ const DashboardPage = () => {
                 await OpportunityService.updateLeadStage(draggedLead.id, stage);
             } catch (error) {
                 console.error('Failed to update lead stage:', error);
-                setLeads(leads);
+                setLeads(leads); // revert on failure
             }
         }
     };
 
-    const getLeadsByStage = (stage: string) => {
-        return leads.filter(lead => lead.stage === stage);
-    };
+    const getLeadsByStage = (stage: string) =>
+        leads.filter(lead => lead.stage === stage);
 
     const getStageColor = (stage: string) => {
         switch (stage) {
@@ -88,7 +103,7 @@ const DashboardPage = () => {
                         Create Lead
                     </Button>
 
-                    <Button variant="secondary" className="gap-2" type="button">
+                    <Button variant="secondary" className="gap-2" type="button" onClick={() => setIsContactModalOpen(true)}>
                         <PlusCircle size={16} />
                         Create Contact
                     </Button>
@@ -138,8 +153,14 @@ const DashboardPage = () => {
                 contacts={contacts}
                 stages={stages}
             />
+
+            <CreateContactModal
+                isOpen={isContactModalOpen}
+                onClose={() => setIsContactModalOpen(false)}
+                onCreate={handleCreateContact}
+            />
         </div>
     );
 };
 
-export default DashboardPage;
+export default PipelinePage;

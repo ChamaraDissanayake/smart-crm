@@ -40,7 +40,7 @@ export const Navbar = () => {
 
             {/* Right side - Company dropdown, Add Company button, and user greeting */}
             <div className="flex items-center gap-4">
-                <div className="w-60">
+                <div className="bg-white rounded-md w-60">
                     <Select>
                         <SelectTrigger>
                             <SelectValue placeholder="Select company" />

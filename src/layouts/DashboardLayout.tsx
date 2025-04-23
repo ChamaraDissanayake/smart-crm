@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar.tsx';
-import DashboardPage from '../pages/dashboard/DashboardPage.tsx';
+import PipelinePage from '../pages/dashboard/PipelinePage.tsx';
 
 const DashboardLayout = () => {
     return (
@@ -11,9 +11,9 @@ const DashboardLayout = () => {
                 <Navbar />
 
                 {/* Page Content */}
-                <main className="flex-1 py-4 overflow-y-auto bg-gradient-to-br from-blue-300 to-white">
+                <main className="flex-1 py-4 overflow-y-auto bg-white">
                     <Outlet />
-                    <DashboardPage />
+                    <PipelinePage />
                 </main>
             </div>
         </div>
