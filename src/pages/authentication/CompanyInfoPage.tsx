@@ -108,7 +108,7 @@ const CompanyInfoPage = () => {
                         </button>
                         <div className="mt-4 text-sm text-center">
                             <a
-                                href="/dashboard"
+                                href="/dashboard/pipeline"
                                 className="font-medium text-gray-400 hover:underline"
                             >
                                 Skip for now

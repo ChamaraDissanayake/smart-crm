@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from '../pages/authentication/LandingPage';
 import SignUpPage from '../pages/authentication/SignUpPage';
 import SignInPage from '../pages/authentication/SignInPage';
@@ -12,6 +12,8 @@ import ChoosePlanPage from '../pages/authentication/ChoosePlanPage';
 import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
+import PipelinePage from '../pages/dashboard/PipelinePage';
+import ContactPage from '../pages/dashboard/ContactPage';
 
 const AppRouter = () => {
     return (
@@ -25,13 +27,19 @@ const AppRouter = () => {
                 <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
                 <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>} />
-                <Route index element={<DashboardLayout />} />
+                {/* Auth Flow Steps */}
                 <Route path="/company-info" element={<PrivateRoute><CompanyInfoPage /></PrivateRoute>} />
                 <Route path="/choose-plan" element={<PrivateRoute><ChoosePlanPage /></PrivateRoute>} />
 
-                {/* Fallback */}
+                {/* Dashboard Routes */}
+                <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
+                    {/* Redirect /dashboard to /dashboard/pipeline */}
+                    <Route index element={<Navigate to="pipeline" replace />} />
+                    <Route path="pipeline" element={<PipelinePage />} />
+                    <Route path="contacts" element={<ContactPage />} />
+                </Route>
+
+                {/* Catch-all */}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </Router>

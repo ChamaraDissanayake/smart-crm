@@ -31,7 +31,7 @@ const SignInPage = () => {
             const response = await AuthService.login(data.email, data.password);
             const decodedToken = AuthService.decodeToken(response.token);
             if (decodedToken.isVerified) {
-                navigate('/dashboard');
+                navigate('/dashboard/pipeline');
             } else {
                 const email = data.email;
                 navigate(`/verify-email?email=${encodeURIComponent(email)}`);

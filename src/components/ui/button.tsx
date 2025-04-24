@@ -16,6 +16,7 @@ const buttonVariants = cva(
         outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        navtab: "rounded-full px-4 py-2 bg-gray-100 text-blue-800 hover:bg-blue-100 data-[active=true]:bg-blue-800 data-[active=true]:text-white",
       },
       size: {
         default: "h-9 px-4 py-2",

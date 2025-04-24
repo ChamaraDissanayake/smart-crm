@@ -35,6 +35,7 @@ interface CheckEmailResponse {
 interface DecodedToken {
     type: string;
     userId: string;
+    name: string;
     email: string;
     isVerified?: boolean;
     exp: number;
@@ -109,10 +110,10 @@ export const AuthService = {
 
     logout(): void {
         Cookies.remove('authToken');
-        window.location.href = '/login';
+        window.location.href = '/';
     },
 
-    getCurrentUser(): { token: string } | null {
+    getCurrentUserToken(): { token: string } | null {
         const token = Cookies.get('authToken');
         return token ? { token } : null;
     },

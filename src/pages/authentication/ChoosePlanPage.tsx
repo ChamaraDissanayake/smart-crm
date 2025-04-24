@@ -22,7 +22,7 @@ const ChoosePlanPage = () => {
         selectedPlan,
         billingCycle
       );
-      navigate('/dashboard');
+      navigate('/dashboard/pipeline');
     } catch (error) {
       console.log('Error subscribing to plan:', error);
     }

@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar.tsx';
-import PipelinePage from '../pages/dashboard/PipelinePage.tsx';
 
 const DashboardLayout = () => {
     return (
@@ -13,7 +12,6 @@ const DashboardLayout = () => {
                 {/* Page Content */}
                 <main className="flex-1 py-4 overflow-y-auto bg-white">
                     <Outlet />
-                    <PipelinePage />
                 </main>
             </div>
         </div>

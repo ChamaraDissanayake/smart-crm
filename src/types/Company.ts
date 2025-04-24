@@ -1,17 +1,16 @@
-export interface CompanyAPIResponse {
+export interface Company {
     id: number;
     name: string;
     industry: number;
-    location: string;
+    location?: string;
     size: number;
-    plan_id: string;
-    is_active: number;
-    is_deleted: number;
-    created_at: string;
-    updated_at: string;
+    planId: string;
+    isActive: boolean;
+    isDefault: boolean;
 }
 
 export interface CompanyDropdownOption {
     id: number;
     name: string;
+    isDefault: boolean;
 }
