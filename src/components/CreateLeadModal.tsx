@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Contact, NewLeadData } from '../services/opportunityService';
+import { Contact, NewLeadData } from '../services/OpportunityService';
 import {
     Select,
     SelectTrigger,

@@ -1,8 +1,9 @@
-import api from './api';
+import { toast } from 'react-toastify';
+import api from './Api';
 
 export const CompanyService = {
     // Create Company
-    createCompany: async (userId: string, companyData: {
+    createCompany: async (userId: number, companyData: {
         name: string;
         industry: string;
         location: string;
@@ -13,17 +14,21 @@ export const CompanyService = {
             userId,
         };
         const res = await api.post('/company', data);
+        toast.success('Company created successfully!');
         return res.data;
     },
 
     updateCompanyPlan: async (companyId: number, planId: string) => {
         const res = await api.patch(`/company/update-plan/${companyId}`, { planId });
+        toast.success('Company details updated successfully!');
         return res.data;
     },
 
     // Get All Companies for Current User
     getUserCompanies: async () => {
         const res = await api.get('/company/user-companies');
+        console.log('Chamara companies', res.data);
+
         return res.data;
     },
 

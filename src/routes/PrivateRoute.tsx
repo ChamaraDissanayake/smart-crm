@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { AuthService } from "../services/authService";
+import { AuthService } from "../services/AuthService";
 import { JSX } from "react";
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {

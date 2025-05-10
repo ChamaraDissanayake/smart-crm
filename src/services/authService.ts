@@ -1,6 +1,6 @@
-import api from './api';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
+import api from './Api';
 
 interface UserData {
     email: string;
@@ -34,7 +34,7 @@ interface CheckEmailResponse {
 
 interface DecodedToken {
     type: string;
-    userId: string;
+    userId: number;
     name: string;
     email: string;
     isVerified?: boolean;
@@ -118,7 +118,12 @@ export const AuthService = {
         return token ? { token } : null;
     },
 
-    async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: string }> {
+    getCurrentUser(): DecodedToken | null {
+        const token = this.getCurrentUserToken()?.token;
+        return token ? this.decodeToken(token) : null;
+    },
+
+    async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: number }> {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/check-user-verification?email=${email}`);
         return res.json();
     },

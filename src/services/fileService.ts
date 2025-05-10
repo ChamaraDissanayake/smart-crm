@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import api from './api';
+import api from './Api';
 
 const fileService = {
     async uploadFile(file: File, config?: AxiosRequestConfig<FormData>) {

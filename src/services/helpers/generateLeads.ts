@@ -1,6 +1,6 @@
 // Note from Chamara: This is a helper function to generate leads for the opportunityService. Need to delete this when get actual data from api.
 
-import { Contact, Lead } from "../opportunityService";
+import { Contact, Lead } from "../OpportunityService";
 
 export const generateLeads = (contacts: Contact[]): Lead[] => {
     const stages = ['New', 'Qualified', 'Proposition', 'Won', 'Lost'] as const;

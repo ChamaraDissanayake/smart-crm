@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { AuthService } from '../../services/authService';
+import { AuthService } from '../../services/AuthService';
 import handleError from '../../utils/handleError';
 
 const loginSchema = z.object({
@@ -31,7 +31,7 @@ const SignInPage = () => {
             const response = await AuthService.login(data.email, data.password);
             const decodedToken = AuthService.decodeToken(response.token);
             if (decodedToken.isVerified) {
-                navigate('/dashboard/pipeline');
+                navigate('/dashboard/crm');
             } else {
                 const email = data.email;
                 navigate(`/verify-email?email=${encodeURIComponent(email)}`);
@@ -43,7 +43,7 @@ const SignInPage = () => {
 
     return (
         <>
-            <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-300 to-white">
+            <div className="flex items-center justify-center min-h-screen px-4 bg-[#E1DBF3]">
                 <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-xl">
                     <h2 className="mb-6 text-2xl font-bold text-blue-800">Sign In</h2>
 

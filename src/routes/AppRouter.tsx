@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from '../pages/authentication/LandingPage';
 import SignUpPage from '../pages/authentication/SignUpPage';
 import SignInPage from '../pages/authentication/SignInPage';
@@ -12,8 +12,16 @@ import ChoosePlanPage from '../pages/authentication/ChoosePlanPage';
 import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
-import PipelinePage from '../pages/dashboard/PipelinePage';
+import CRMPage from '../pages/dashboard/CRMPage';
 import ContactPage from '../pages/dashboard/ContactPage';
+import HomePage from '../pages/dashboard/HomePage';
+import CommunicationPage from '@/pages/dashboard/CommunicationPage';
+import AccountPage from '@/pages/dashboard/settings/AccountPage';
+import ApiPage from '@/pages/dashboard/settings/ApiPage';
+import TeamPage from '@/pages/dashboard/settings/TeamPage';
+import ProductsPage from '@/pages/dashboard/sales/ProductsPage';
+import QuotationPage from '@/pages/dashboard/sales/QuotationPage';
+import InvoicingPage from '@/pages/dashboard/sales/InvoicingPage';
 
 const AppRouter = () => {
     return (
@@ -33,10 +41,18 @@ const AppRouter = () => {
 
                 {/* Dashboard Routes */}
                 <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
-                    {/* Redirect /dashboard to /dashboard/pipeline */}
-                    <Route index element={<Navigate to="pipeline" replace />} />
-                    <Route path="pipeline" element={<PipelinePage />} />
+                    {/* Redirect /dashboard to /dashboard/crm */}
+                    {/* <Route index element={<Navigate to="crm" replace />} /> */}
+                    <Route path="home" element={<HomePage />} />
                     <Route path="contacts" element={<ContactPage />} />
+                    <Route path="communication" element={<CommunicationPage />} />
+                    <Route path="crm" element={<CRMPage />} />
+                    <Route path="sales-products" element={<ProductsPage />} />
+                    <Route path="sales-quotation" element={<QuotationPage />} />
+                    <Route path="sales-invoicing" element={<InvoicingPage />} />
+                    <Route path="settings-account" element={<AccountPage />} />
+                    <Route path="settings-team" element={<TeamPage />} />
+                    <Route path="settings-api" element={<ApiPage />} />
                 </Route>
 
                 {/* Catch-all */}

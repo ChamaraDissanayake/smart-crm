@@ -5,12 +5,12 @@ import {
     Lead,
     Contact,
     NewLeadData,
-} from '../../services/opportunityService';
+} from '../../services/OpportunityService';
 import { CreateLeadModal } from '../../components/CreateLeadModal';
 import { CreateContactModal } from '../../components/CreateContactModal';
 import { Button } from '@/components/ui/button';
 
-const PipelinePage = () => {
+const CRMPage = () => {
     const [stages, setStages] = useState<string[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -94,56 +94,76 @@ const PipelinePage = () => {
 
     return (
         <div className="py-4">
-            <div className="flex flex-row items-center justify-between px-4 mb-6 gap-x-4">
-                <h1 className="text-2xl font-bold">Sales Pipeline</h1>
-
-                <div className="flex gap-2">
-                    <Button variant="primary" className="gap-2" type="button" onClick={() => setIsLeadModalOpen(true)}>
-                        <PlusCircle size={16} />
-                        Create Lead
-                    </Button>
-
-                    <Button variant="secondary" className="gap-2" type="button" onClick={() => setIsContactModalOpen(true)}>
-                        <PlusCircle size={16} />
-                        Create Contact
-                    </Button>
+            {/* Page header - stays fixed at top */}
+            <div className="sticky top-0 z-10 pt-4 pb-2 bg-white border-b">
+                <div className="flex flex-row items-center justify-between px-4 mb-2 gap-x-4">
+                    <h1 className="text-2xl font-bold">Pipeline</h1>
+                    <div className="flex gap-2">
+                        <Button variant="primary" className="gap-2" type="button" onClick={() => setIsLeadModalOpen(true)}>
+                            <PlusCircle size={16} />
+                            Create Lead
+                        </Button>
+                        <Button variant="secondary" className="gap-2" type="button" onClick={() => setIsContactModalOpen(true)}>
+                            <PlusCircle size={16} />
+                            Create Contact
+                        </Button>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex gap-4 px-4 overflow-x-auto">
-                {stages.map(stage => (
-                    <div
-                        key={stage}
-                        className={`flex-1 min-w-64 rounded-lg border ${getStageColor(stage)}`}
-                        onDragOver={(e) => handleDragOver(e, stage)}
-                        onDrop={(e) => handleDrop(e, stage)}
-                    >
-                        <div className="p-3 font-semibold border-b">
-                            {stage} ({getLeadsByStage(stage).length})
-                        </div>
-                        <div className="p-2 space-y-2">
-                            {getLeadsByStage(stage).map(lead => (
-                                <div
-                                    key={lead.id}
-                                    className="p-3 bg-white rounded shadow cursor-move"
-                                    draggable
-                                    onDragStart={() => handleDragStart(lead)}
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="font-medium">{lead.name}</h3>
-                                            <p className="text-sm text-gray-600">{lead.contact.name}</p>
-                                        </div>
-                                        <span className={`w-3 h-3 rounded-full ${getPriorityColor(lead.priority)}`}></span>
-                                    </div>
-                                    <div className="mt-2 text-sm">
-                                        <span className="font-medium">${lead.expectedRevenue.toLocaleString()}</span>
-                                    </div>
+            {/* Main scrollable container */}
+            <div className="relative overflow-y-auto" style={{ height: 'calc(100vh - 120px)' }}>
+                {/* Column headers container - sticky vertically but scrolls horizontally */}
+                <div className="sticky top-[0] z-10 bg-white">
+                    <div className="flex px-4">
+                        {stages.map(stage => (
+                            <div
+                                key={stage}
+                                className={`flex-shrink-0 w-64 mr-4 rounded-t-lg ${getStageColor(stage)}`}
+                            >
+                                <div className="p-3 font-semibold">
+                                    {stage} ({getLeadsByStage(stage).length})
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                </div>
+
+                {/* Columns content - scrolls both directions */}
+                <div className="flex px-4">
+                    {stages.map(stage => (
+                        <div
+                            key={stage}
+                            className={`flex-shrink-0 w-64 mr-4 rounded-lg border ${getStageColor(stage)}`}
+                            onDragOver={(e) => handleDragOver(e, stage)}
+                            onDrop={(e) => handleDrop(e, stage)}
+                        >
+                            {/* Hidden spacer matching header height */}
+                            <div className="opacity-0 pointer-events-none h-[52px]"></div>
+                            <div className="p-2 space-y-2">
+                                {getLeadsByStage(stage).map(lead => (
+                                    <div
+                                        key={lead.id}
+                                        className="p-3 bg-white rounded shadow cursor-move"
+                                        draggable
+                                        onDragStart={() => handleDragStart(lead)}
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h3 className="font-medium">{lead.name}</h3>
+                                                <p className="text-sm text-gray-600">{lead.contact.name}</p>
+                                            </div>
+                                            <span className={`w-3 h-3 rounded-full ${getPriorityColor(lead.priority)}`}></span>
+                                        </div>
+                                        <div className="mt-2 text-sm">
+                                            <span className="font-medium">${lead.expectedRevenue.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             <CreateLeadModal
@@ -163,4 +183,4 @@ const PipelinePage = () => {
     );
 };
 
-export default PipelinePage;
+export default CRMPage;

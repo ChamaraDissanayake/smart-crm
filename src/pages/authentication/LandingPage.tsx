@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 const LandingPage = () => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-300 to-white">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#E1DBF3]">
             <div className="px-4 text-center">
                 <h1 className="mb-6 text-4xl font-bold text-blue-800">Welcome to Smart Global CRM</h1>
                 <p className="mb-8 text-lg text-gray-600">AI-powered CRM and Chatbot Platform</p>

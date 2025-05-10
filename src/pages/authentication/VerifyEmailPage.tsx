@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AuthService } from '../../services/authService';
+import { AuthService } from '../../services/AuthService';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
 import { useResendTimer } from '../../hooks/useResendTimer';
@@ -111,7 +111,7 @@ const VerifyEmailPage = () => {
     }, [checkVerification]);
 
     return (
-        <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-300 to-white">
+        <div className="flex items-center justify-center min-h-screen px-4 bg-[#E1DBF3]">
             <div className="w-full max-w-md p-8 text-center bg-white border border-gray-200 shadow-sm rounded-2xl">
                 {status === 'verifying' && (
                     <div className="space-y-6">

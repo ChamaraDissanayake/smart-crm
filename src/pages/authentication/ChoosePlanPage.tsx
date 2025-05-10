@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { subscriptionPlansService } from '../../services/subscriptionPlansService';
+import { subscriptionPlansService } from '../../services/SubscriptionPlansService';
 import { SubscriptionPlan } from '../../types/SubscriptionPlan';
 import { useSearchParams } from 'react-router-dom';
 
@@ -22,7 +22,7 @@ const ChoosePlanPage = () => {
         selectedPlan,
         billingCycle
       );
-      navigate('/dashboard/pipeline');
+      navigate('/dashboard/crm');
     } catch (error) {
       console.log('Error subscribing to plan:', error);
     }
@@ -46,7 +46,7 @@ const ChoosePlanPage = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-300 to-white">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-[#E1DBF3]">
       <div className="w-full max-w-6xl p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
         <h2 className="mb-6 text-2xl font-bold text-center text-gray-900">Choose a Plan</h2>
 
