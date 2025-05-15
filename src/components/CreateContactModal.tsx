@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface Contact {
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string;

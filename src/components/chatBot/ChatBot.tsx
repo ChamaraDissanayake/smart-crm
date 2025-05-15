@@ -1,7 +1,6 @@
+import { AuthService } from "@/services/AuthService";
 import ChatService, { ChatMessage } from "@/services/ChatService";
 import React, { useState, useEffect, useRef } from "react";
-
-import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 
 interface ChatBotProps {
     onClose: () => void;
@@ -18,22 +17,29 @@ const ChatBot: React.FC<ChatBotProps> = ({ onClose }) => {
     // Generate or retrieve user ID from localStorage
     const userId = (() => {
         // Check if a user ID already exists in localStorage
-        const storedUserId = localStorage.getItem("userId");
-        if (storedUserId) {
-            return storedUserId; // Use the existing user ID
+        let currentUserId = localStorage.getItem("userId");
+        if (!currentUserId) {
+            const decodedToken = AuthService.getCurrentUser();
+            if (decodedToken) {
+                currentUserId = decodedToken.userId;
+                localStorage.setItem("userId", currentUserId);
+            } else {
+                currentUserId = '0000000000';
+            }
+            console.log('Chamara no user data found from local storage', currentUserId);
         } else {
-            // Generate a new unique ID and store it in localStorage
-            const newUserId = uuidv4();
-            localStorage.setItem("userId", newUserId);
-            return newUserId;
+            console.log('Chamara user found', currentUserId);
         }
+        return currentUserId;
     })();
 
     const selectedCompanyId = (() => {
         const storedCompanyId = localStorage.getItem("selectedCompany");
         if (storedCompanyId) {
+            console.log('Chamara company found', storedCompanyId);
             return storedCompanyId; // Use the existing user ID
         } else {
+            // Need to set method to find company id
             return '';
         }
     })();
@@ -111,7 +117,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ onClose }) => {
                 {/* Chat header */}
                 <div className="flex items-center p-4 bg-blue-900 rounded-t-lg">
                     <img
-                        src="../../../public/bot.jpg"
+                        src="/bot.jpg"
                         alt="Profile"
                         className="w-10 h-10 mr-3 rounded-full"
                     />
@@ -152,7 +158,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ onClose }) => {
                         onChange={(e) => setInputText(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
-                        className="flex-1 p-2 bg-gray-900 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                        className="flex-1 p-2 text-white bg-gray-900 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
                     />
                     <button
                         onClick={handleSendMessage}

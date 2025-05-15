@@ -6,7 +6,7 @@ export const subscriptionPlansService = {
         return res.data;
     },
 
-    subscribeToPlan: async (companyId: number, planId: string, billingCycle: string) => {
+    subscribeToPlan: async (companyId: string, planId: string, billingCycle: string) => {
         const res = await api.post('/subscriptions/subscribe', { companyId, planId, billingCycle });
         return res.data;
     },

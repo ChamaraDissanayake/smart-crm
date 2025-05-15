@@ -34,7 +34,7 @@ interface CheckEmailResponse {
 
 interface DecodedToken {
     type: string;
-    userId: number;
+    userId: string;
     name: string;
     email: string;
     isVerified?: boolean;
@@ -110,6 +110,7 @@ export const AuthService = {
 
     logout(): void {
         Cookies.remove('authToken');
+        localStorage.clear();
         window.location.href = '/';
     },
 
@@ -123,7 +124,7 @@ export const AuthService = {
         return token ? this.decodeToken(token) : null;
     },
 
-    async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: number }> {
+    async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: string }> {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/check-user-verification?email=${email}`);
         return res.json();
     },

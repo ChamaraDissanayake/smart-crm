@@ -5,13 +5,10 @@ export const useCompany = () => {
 
     useEffect(() => {
         const saved = localStorage.getItem('selectedCompany');
-        console.log('Chamara test saved', saved);
         if (saved) setCompanyId(saved);
     }, []);
 
     const switchCompany = (id: string) => {
-        console.log('Chamara test id', id);
-
         localStorage.setItem('selectedCompany', id);
         setCompanyId(id);
     };

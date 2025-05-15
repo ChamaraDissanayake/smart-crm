@@ -21,7 +21,7 @@ const CompanyInfoPage = () => {
             if (!userId) {
                 throw new Error('User ID not found in URL');
             }
-            const response = await CompanyService.createCompany(parseInt(userId), formData);
+            const response = await CompanyService.createCompany(userId, formData);
             navigate('/choose-plan?companyId=' + response.id);
         } catch (error) {
             handleError(error, true);

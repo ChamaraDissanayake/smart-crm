@@ -3,7 +3,7 @@ import api from './Api';
 
 export const CompanyService = {
     // Create Company
-    createCompany: async (userId: number, companyData: {
+    createCompany: async (userId: string, companyData: {
         name: string;
         industry: string;
         location: string;
@@ -18,7 +18,18 @@ export const CompanyService = {
         return res.data;
     },
 
-    updateCompanyPlan: async (companyId: number, planId: string) => {
+    setDefaultCompany: async (companyId: string) => {
+        try {
+            const res = await api.patch(`/company/set-default/${companyId}`);
+            toast.success('Default company updated.');
+            return res.data;
+        } catch (error) {
+            toast.error('Failed to update default company.');
+            throw error;
+        }
+    },
+
+    updateCompanyPlan: async (companyId: string, planId: string) => {
         const res = await api.patch(`/company/update-plan/${companyId}`, { planId });
         toast.success('Company details updated successfully!');
         return res.data;
@@ -27,8 +38,6 @@ export const CompanyService = {
     // Get All Companies for Current User
     getUserCompanies: async () => {
         const res = await api.get('/company/user-companies');
-        console.log('Chamara companies', res.data);
-
         return res.data;
     },
 

@@ -7,18 +7,22 @@ interface CompanyInfoFormProps {
         industry?: string;
         location?: string;
         size?: string;
+        chatbotInstructions?: string;
     };
     onSubmit: (formData: {
         name: string;
         industry: string;
         location: string;
         size: string;
+        chatbotInstructions: string;
     }) => Promise<void>;
     loading?: boolean;
     showSkip?: boolean;
     submitButtonText?: string;
     onSkip?: () => void;
 }
+
+const testSmartGlobalInstructions = "Your name is Ayisha. Your role is Senior Customer Happiness Advisor. Company: SmartGlobal AI Solutions. Location: Alfutaim Office Tower, Day to Day Building, 1st Floor - Office 102, Smart Hub HQ. Contact: +971 50 440 6565 | ibrahim@smartclassic.ae. Website: smartglobalhub.com. Working Hours (UAE Time): Monday-Saturday, 9 AM–6 PM; closed Sunday. Services: Custom software (eCommerce, HR, finance, logistics), AI & Machine Learning, Cloud & SaaS, Cybersecurity, Web & Mobile Apps, Automation & Chatbots. Tech Stack: All modern languages/frameworks (Flutter, React, Node.js, Python, etc.). Response Rules: Always use UAE time (GMT+4). Keep replies under 20 words. Never say you’re an AI. If asked for your name, say only: 'My name is Ayisha.' If asked about hours, say only: 'We’re open Monday-Saturday, 9 AM–6 PM.' Never deviate from these rules.";
 
 export const CompanyInfoForm = ({
     initialData = {},
@@ -33,6 +37,7 @@ export const CompanyInfoForm = ({
         industry: initialData.industry || '',
         location: initialData.location || '',
         size: initialData.size || '',
+        chatbotInstructions: testSmartGlobalInstructions
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

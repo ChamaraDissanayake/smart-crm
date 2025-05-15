@@ -16,7 +16,7 @@ const ChatFAB: React.FC = () => {
                 className="p-2 bg-transparent rounded-full hover:scale-110"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <img src="../../../public/chat.png" alt="Chat" className="w-12 h-12" />
+                <img src="/chat.png" alt="Chat" className="w-12 h-12" />
             </button>
 
             {/* Chat Options */}

@@ -14,13 +14,12 @@ export interface ChatHistoryResponse {
 const ChatService = {
     sendChatMessage: async (userId: string, companyId: string, userInput: string): Promise<{ botResponse: string }> => {
         try {
-            console.log('Chamara', 'userId', userId, 'companyId', companyId, 'userInput', userInput);
-
+            console.log('Chamara sending data', userId, companyId, userInput);
             const response = await axios.post<{ botResponse: string }>(
                 CHAT_BASE_URL + '/chat',
-                { companyId, userInput }
+                { userId, companyId, userInput }
             );
-
+            console.log('Chamara', response.data);
             return response.data;
         } catch (error) {
             console.error("Error sending message:", error);

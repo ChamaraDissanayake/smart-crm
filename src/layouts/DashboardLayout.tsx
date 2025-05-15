@@ -14,7 +14,7 @@ const DashboardLayout = () => {
                 <Sidebar />
 
                 {/* Main Content Area */}
-                <main className="flex-1 p-4 overflow-y-auto bg-white">
+                <main className="flex-1 overflow-y-auto bg-white">
                     <Outlet />
                 </main>
             </div>

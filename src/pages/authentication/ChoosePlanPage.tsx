@@ -15,10 +15,14 @@ const ChoosePlanPage = () => {
     e.preventDefault();
     try {
       if (!selectedPlan) return;
-      const companyId = searchParams.get('companyId');
+      const companyId = searchParams.get('companyId') || '';
       console.log('Selected Plan:', selectedPlan, billingCycle, companyId);
+      if (!companyId) {
+        console.error('Company ID is required.');
+        return;
+      }
       await subscriptionPlansService.subscribeToPlan(
-        Number(companyId),
+        companyId,
         selectedPlan,
         billingCycle
       );

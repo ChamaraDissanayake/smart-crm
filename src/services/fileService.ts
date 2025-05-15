@@ -47,7 +47,7 @@ const fileService = {
         return api.get('/files');
     },
 
-    async deleteFile(id: number): Promise<void> {
+    async deleteFile(id: string): Promise<void> {
         await api.delete(`/files/${id}`);
     },
 
