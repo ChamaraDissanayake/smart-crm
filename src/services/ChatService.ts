@@ -1,31 +1,73 @@
+// src/services/ChatService.ts
 import axios from "axios";
+import socket from "./helpers/socket";
+import api from './Api';
+import { Message } from "@/types/Chat";
+
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export interface ChatMessage {
-    id: string;
-    text: string;
-    sender: "bot" | "user";
-}
-
-export interface ChatHistoryResponse {
-    chatHistory: { role: string; content: string; timestamp: number }[];
-}
-
 const ChatService = {
-    sendChatMessage: async (userId: string, companyId: string, userInput: string): Promise<{ botResponse: string }> => {
+    connectToThread: (threadId: string, onMessage: (msg: Message) => void) => {
+        if (!socket.connected) {
+            socket.connect();
+        }
+
+        socket.emit("join-thread", threadId);
+
+        socket.on("new-message", onMessage);
+
+        socket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err);
+        });
+
+        return () => {
+            socket.off("new-message", onMessage);
+        };
+    },
+
+    //Use this to send Whatsapp messages only
+    sendWhatsAppMessage: async (to: string, message: string) => {
         try {
-            console.log('Chamara sending data', userId, companyId, userInput);
-            const response = await axios.post<{ botResponse: string }>(
-                CHAT_BASE_URL + '/chat',
-                { userId, companyId, userInput }
-            );
-            console.log('Chamara', response.data);
+            const companyId = localStorage.getItem('selectedCompany');
+            const response = await axios.post(`${CHAT_BASE_URL}/whatsapp/send`, {
+                to,
+                message,
+                companyId
+            });
             return response.data;
         } catch (error) {
             console.error("Error sending message:", error);
             throw error;
         }
     },
+
+    getChatHeads: async (companyId: string, channel: string = 'all') => {
+        try {
+            const res = await api.get('/chat/chat-heads', {
+                params: { companyId, channel }
+            });
+            console.log('Chamara data', res.data);
+
+            return res.data;
+        } catch (error) {
+            console.error('Error fetching chat heads:', error);
+            throw error;
+        }
+    },
+
+    getChatHistory: async (threadId: string, offset: number = 0) => {
+        try {
+            const res = await api.get('/chat/chat-history', {
+                params: { threadId, offset }
+            });
+            console.log('Chamara chat data', res.data);
+
+            return res.data;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
 };
 
 export default ChatService;

@@ -110,7 +110,7 @@ export const Navbar = () => {
 
     useEffect(() => {
         if (selectedCompanyId) {
-            console.log('Selected company updated:', selectedCompanyId);
+            // console.log('Chamara Selected company updated:', selectedCompanyId);
             // Add any logic you want here (e.g., fetch company-specific data)
             localStorage.setItem('selectedCompany', selectedCompanyId);
         }

@@ -124,6 +124,20 @@ export const AuthService = {
         return token ? this.decodeToken(token) : null;
     },
 
+    getCurrentUserId(): string {
+        let currentUserId = localStorage.getItem("userId");
+        if (!currentUserId) {
+            const decodedToken = this.getCurrentUser();
+            if (decodedToken) {
+                currentUserId = decodedToken.userId;
+                localStorage.setItem("userId", currentUserId);
+            } else {
+                throw 'User id can not find';
+            }
+        }
+        return currentUserId;
+    },
+
     async verificationCheck(email: string): Promise<{ isVerified: boolean, userId: string }> {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/check-user-verification?email=${email}`);
         return res.json();
