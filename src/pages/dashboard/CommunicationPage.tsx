@@ -106,6 +106,19 @@ const CommunicationPage = () => {
         }
     };
 
+    // const toggleAssign = async (assignee: 'bot' | 'agent') => {
+    //     try {
+    //         const threadId = selectedContact?.id;
+    //         if (threadId) {
+    //             await ChatService.assignChat(threadId, assignee)
+    //         } else {
+    //             throw 'Thread id not found'
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
+
     useEffect(() => {
         if (!selectedContact) return;
 
@@ -170,9 +183,9 @@ const CommunicationPage = () => {
                     <button
                         className={cn(
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
-                            selectedChannel === 'chatbot' && 'bg-purple-100 text-purple-600'
+                            selectedChannel === 'web' && 'bg-purple-100 text-purple-600'
                         )}
-                        onClick={() => setSelectedChannel('chatbot')}
+                        onClick={() => setSelectedChannel('web')}
                         title="ChatBot"
                     >
                         <FaRobot className="text-xl text-purple-500" />
@@ -207,7 +220,7 @@ const CommunicationPage = () => {
                                 {contact.name.charAt(0)}
                             </div>
                             <div className="flex-1 overflow-hidden">
-                                <div className="font-medium truncate">{contact.name}</div>
+                                <div className="font-medium truncate">{contact.name || "Unknown"}</div>
                                 <div className="text-xs truncate text-muted-foreground">
                                     {contact.lastMessage}
                                 </div>

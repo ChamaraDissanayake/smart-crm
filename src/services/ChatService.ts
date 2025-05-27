@@ -3,6 +3,7 @@ import axios from "axios";
 import socket from "./helpers/socket";
 import api from './Api';
 import { Message } from "@/types/Chat";
+import { AuthService } from "./AuthService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -46,7 +47,6 @@ const ChatService = {
             const res = await api.get('/chat/chat-heads', {
                 params: { companyId, channel }
             });
-            console.log('Chamara data', res.data);
 
             return res.data;
         } catch (error) {
@@ -65,6 +65,16 @@ const ChatService = {
             return res.data;
         } catch (error) {
             console.error(error);
+        }
+    },
+
+    assignChat: async (assignee: string, threadId: string) => {
+        try {
+            const userId = AuthService.getCurrentUserId();
+            const res = await api.patch(`/chat/assign`, { threadId, userId, assignee });
+            console.log(res);
+        } catch (error) {
+            console.log(error);
         }
     }
 
