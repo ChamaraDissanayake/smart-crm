@@ -12,6 +12,7 @@ interface Contact {
     id: string;
     name: string;
     phone: string;
+    channel: string;
     lastMessage: string;
     time: string;
 }
@@ -36,12 +37,12 @@ const CommunicationPage = () => {
             try {
                 // Pass channel param to backend (lowercase)
                 const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
-
                 const formattedContacts: Contact[] = chatHeads.map((head) => ({
                     id: head.id,
                     name: head.customer.name || head.customer.phone,
                     phone: head.customer.phone,
                     lastMessage: head.lastMessage?.content || '',
+                    channel: head.channel,
                     time: head.lastMessage?.createdAt
                         ? new Date(head.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         : '',
@@ -97,8 +98,16 @@ const CommunicationPage = () => {
         setIsSending(true);
 
         try {
-            await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
-            // Keep the message in the input disabled until received by socket
+            if (selectedContact.channel === 'whatsapp') {
+                await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
+            } else if (selectedContact.channel === 'web') {
+                await ChatService.sendWebMessage(selectedContact.id, newMessage);
+            } else {
+                throw new Error(`Unsupported channel: ${selectedContact.channel}`);
+            }
+
+            setNewMessage('');
+            setIsSending(false);
         } catch (error) {
             console.error('Failed to send message:', error);
             toast.error('Failed to send message');

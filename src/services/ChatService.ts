@@ -42,6 +42,19 @@ const ChatService = {
         }
     },
 
+    sendWebMessage: async (threadId: string, message: string) => {
+        try {
+            const response = await axios.post(`${CHAT_BASE_URL}/chat/chat-web-send`, {
+                threadId,
+                message
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error sending message:", error);
+            throw error;
+        }
+    },
+
     getChatHeads: async (companyId: string, channel: string = 'all') => {
         try {
             const res = await api.get('/chat/chat-heads', {
