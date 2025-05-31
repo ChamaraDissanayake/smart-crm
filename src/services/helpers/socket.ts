@@ -4,10 +4,12 @@ import { io, Socket } from "socket.io-client";
 
 interface ServerToClientEvents {
     "new-message": (message: Message) => void;
+    "new-thread": (thread: { id: string; companyId: string }) => void;
 }
 
 interface ClientToServerEvents {
     "join-thread": (threadId: string) => void;
+    "join-company": (companyId: string) => void;
 }
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(

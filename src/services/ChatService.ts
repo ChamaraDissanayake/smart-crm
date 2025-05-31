@@ -8,6 +8,39 @@ import { AuthService } from "./AuthService";
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ChatService = {
+
+    connectToChat: (
+        companyId: string,
+        onNewMessage: (msg: Message) => void,
+        onNewThread: (thread: { id: string; companyId: string }) => void
+    ) => {
+        if (!socket.connected) {
+            socket.connect();
+        }
+
+        // Join company room
+        socket.emit("join-company", companyId);
+
+        // Setup general listeners
+        socket.on("new-message", onNewMessage);
+
+        console.log("Joining company room:", companyId);
+        socket.on("new-thread", (thread) => {
+            console.log("Received new-thread event:", thread);
+            onNewThread(thread);
+        });
+
+
+        socket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err);
+        });
+
+        return () => {
+            socket.off("new-message", onNewMessage);
+            socket.off("new-thread", onNewThread);
+        };
+    },
+
     connectToThread: (threadId: string, onMessage: (msg: Message) => void) => {
         if (!socket.connected) {
             socket.connect();
@@ -15,14 +48,16 @@ const ChatService = {
 
         socket.emit("join-thread", threadId);
 
-        socket.on("new-message", onMessage);
+        const messageListener = (incomingMessage: Message) => {
+            if (incomingMessage.threadId === threadId) {
+                onMessage(incomingMessage);
+            }
+        };
 
-        socket.on("connect_error", (err) => {
-            console.error("Socket connection error:", err);
-        });
+        socket.on("new-message", messageListener);
 
         return () => {
-            socket.off("new-message", onMessage);
+            socket.off("new-message", messageListener);
         };
     },
 

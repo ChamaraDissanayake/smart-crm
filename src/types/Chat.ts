@@ -17,5 +17,5 @@ export interface Message {
     role: 'user' | 'assistant';
     content: string;
     createdAt: string;
-    status?: 'sending' | 'sent' | 'delivered' | 'read';
+    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 }

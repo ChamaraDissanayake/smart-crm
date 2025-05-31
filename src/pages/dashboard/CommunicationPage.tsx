@@ -1,6 +1,4 @@
-// src/pages/CommunicationPage.tsx
-
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { FaWhatsapp, FaRobot, FaPaperPlane, FaGlobe } from 'react-icons/fa';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -14,71 +12,91 @@ interface Contact {
     phone: string;
     channel: string;
     lastMessage: string;
+    lastMessageRole?: 'user' | 'assistant'; // Fixed type
     time: string;
 }
 
 const CommunicationPage = () => {
-    const [selectedChannel, setSelectedChannel] = useState('all'); // Default to 'all'
+    const [selectedChannel, setSelectedChannel] = useState('all');
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [unreadThreads, setUnreadThreads] = useState<Set<string>>(new Set());
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Fetch chat heads whenever selectedChannel changes
-    useEffect(() => {
+    const fetchChatHeads = useCallback(async () => {
         const companyId = localStorage.getItem('selectedCompany');
         if (!companyId) {
-            throw 'Can not find company id';
+            toast.error('Company ID not found');
+            return;
         }
 
-        const fetchChatHeads = async () => {
-            try {
-                // Pass channel param to backend (lowercase)
-                const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
-                const formattedContacts: Contact[] = chatHeads.map((head) => ({
-                    id: head.id,
-                    name: head.customer.name || head.customer.phone,
-                    phone: head.customer.phone,
-                    lastMessage: head.lastMessage?.content || '',
-                    channel: head.channel,
-                    time: head.lastMessage?.createdAt
-                        ? new Date(head.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : '',
-                }));
+        try {
+            const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
+            const formattedContacts: Contact[] = chatHeads.map((head) => ({
+                id: head.id,
+                name: head.customer.name || head.customer.phone,
+                phone: head.customer.phone,
+                lastMessage: head.lastMessage?.content || '',
+                lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined, // Type assertion
+                channel: head.channel,
+                time: head.lastMessage?.createdAt
+                    ? new Date(head.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : '',
+            }));
 
-                setContacts(formattedContacts);
-                setSelectedContact(formattedContacts.length > 0 ? formattedContacts[0] : null);
-                setMessages([]); // Reset messages on channel switch
-            } catch (error) {
-                console.error(error);
-                toast.error('Failed to load contacts');
+            setContacts(formattedContacts);
+
+            // Preserve selected contact if it still exists in the new list
+            if (selectedContact) {
+                const stillExists = formattedContacts.some(c => c.id === selectedContact.id);
+                if (!stillExists) {
+                    setSelectedContact(null);
+                    setMessages([]);
+                }
+            } else if (formattedContacts.length > 0) {
+                setSelectedContact(formattedContacts[0]);
             }
-        };
-
-        fetchChatHeads();
-    }, [selectedChannel]);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to load contacts');
+        }
+    }, [selectedChannel, selectedContact]);
 
     useEffect(() => {
+        fetchChatHeads();
+    }, [fetchChatHeads]);
+
+    // Fetch chat history when selected contact changes
+    useEffect(() => {
         if (!selectedContact) {
-            setMessages([]); // Clear messages if no contact selected
+            setMessages([]);
             return;
         }
 
         const fetchChatHistory = async () => {
             try {
                 const chatMessages = await ChatService.getChatHistory(selectedContact.id, 0);
-                // Format messages to match your Message interface and UI needs:
                 const formattedMessages = chatMessages.map((msg: Message) => ({
                     id: msg.id,
                     threadId: selectedContact.id,
                     role: msg.role,
                     content: msg.content,
                     createdAt: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: msg.status,
                 }));
+                console.log('Chamara set messages 91');
+                setMessages(formattedMessages.reverse());
 
-                setMessages(formattedMessages.reverse()); // reverse to show oldest first
+                // Mark as read when opening
+                setUnreadThreads(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(selectedContact.id);
+                    return newSet;
+                });
             } catch (error) {
                 console.error('Failed to fetch chat history:', error);
                 toast.error('Failed to load chat history');
@@ -88,78 +106,179 @@ const CommunicationPage = () => {
         fetchChatHistory();
     }, [selectedContact]);
 
+    // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // Socket connection for real-time updates
+    useEffect(() => {
+        const companyId = localStorage.getItem('selectedCompany');
+        if (!companyId) return;
+
+        const handleNewMessage = (message: Message) => {
+            // Update chat heads order and mark as unread if not the current chat
+            setContacts(prev => {
+                const contactIndex = prev.findIndex(c => c.id === message.threadId);
+                if (contactIndex === -1) return prev;
+
+                const updatedContacts = [...prev];
+                const contact = updatedContacts[contactIndex];
+
+                updatedContacts[contactIndex] = {
+                    ...contact,
+                    lastMessage: message.content,
+                    lastMessageRole: message.role,
+                    time: new Date(message.createdAt).toLocaleTimeString(
+                        [], { hour: '2-digit', minute: '2-digit' }
+                    )
+                };
+
+                if (contactIndex > 0) {
+                    updatedContacts.splice(contactIndex, 1);
+                    updatedContacts.unshift(contact);
+                }
+
+                return updatedContacts;
+            });
+
+            // Mark as unread if not the current chat
+            if (selectedContact?.id !== message.threadId) {
+                setUnreadThreads(prev => new Set(prev).add(message.threadId));
+            }
+
+            // If it's the current chat, add to messages
+            if (selectedContact?.id === message.threadId) {
+                setMessages(prev => [
+                    ...prev,
+                    {
+                        id: message.id,
+                        threadId: message.threadId,
+                        content: message.content,
+                        role: message.role,
+                        createdAt: new Date(message.createdAt).toLocaleTimeString(
+                            [], { hour: '2-digit', minute: '2-digit' }
+                        ),
+                        status: message.status,
+                    },
+                ]);
+            }
+        };
+
+        const handleNewThread = (thread: { id: string; companyId: string }) => {
+            console.log('Chamara new thread', thread.companyId, companyId);
+
+            if (thread.companyId === companyId) {
+                fetchChatHeads();
+            }
+        };
+
+        // Use the modified connectToChat that includes company joining
+        const cleanup = ChatService.connectToChat(
+            companyId,
+            handleNewMessage,
+            handleNewThread
+        );
+
+        return cleanup;
+    }, [selectedChannel, selectedContact, fetchChatHeads]);
+
+    // Connect to thread-specific socket when a contact is selected
+    useEffect(() => {
+        if (!selectedContact) return;
+
+        const threadId = selectedContact.id;
+        const cleanup = ChatService.connectToThread(threadId, (incomingMessage) => {
+            console.log('Chamara set messages 190 commented', incomingMessage);
+            // if (incomingMessage.threadId !== threadId) return;
+
+            // setMessages(prev => [
+            //     ...prev,
+            //     {
+            //         id: incomingMessage.id,
+            //         threadId: incomingMessage.threadId,
+            //         content: incomingMessage.content,
+            //         role: incomingMessage.role,
+            //         createdAt: new Date(incomingMessage.createdAt).toLocaleTimeString([], {
+            //             hour: '2-digit',
+            //             minute: '2-digit',
+            //         }),
+            //         status: incomingMessage.status,
+            //     },
+            // ]);
+        });
+
+        return cleanup;
+    }, [selectedContact]);
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || isSending || !selectedContact) return;
 
         setIsSending(true);
+        setNewMessage(''); // Clear input immediately but keep disabled
 
         try {
             if (selectedContact.channel === 'whatsapp') {
                 await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
             } else if (selectedContact.channel === 'web') {
                 await ChatService.sendWebMessage(selectedContact.id, newMessage);
-            } else {
-                throw new Error(`Unsupported channel: ${selectedContact.channel}`);
             }
-
-            setNewMessage('');
-            setIsSending(false);
+            // Don't update UI here - wait for socket event
         } catch (error) {
             console.error('Failed to send message:', error);
             toast.error('Failed to send message');
             setIsSending(false);
+            setNewMessage(newMessage); // Restore the message if failed
         }
     };
 
-    // const toggleAssign = async (assignee: 'bot' | 'agent') => {
-    //     try {
-    //         const threadId = selectedContact?.id;
-    //         if (threadId) {
-    //             await ChatService.assignChat(threadId, assignee)
-    //         } else {
-    //             throw 'Thread id not found'
-    //         }
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
-
-    useEffect(() => {
-        if (!selectedContact) return;
-
-        const threadId = selectedContact.id;
-
-        const cleanup = ChatService.connectToThread(threadId, (incomingMessage) => {
-            // Ensure the incoming message is for the current thread
-            if (incomingMessage.threadId !== threadId) return;
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: incomingMessage.id,
-                    threadId: incomingMessage.threadId,
-                    content: incomingMessage.content,
-                    role: incomingMessage.role,
-                    createdAt: new Date(incomingMessage.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }),
-                },
-            ]);
-
-            // Clear and enable input when assistant message arrives
-            if (incomingMessage.role === 'assistant') {
-                setNewMessage('');
-                setIsSending(false);
-            }
+    const handleSelectContact = (contact: Contact) => {
+        setUnreadThreads(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(contact.id);
+            return newSet;
         });
+        setSelectedContact(contact);
+    };
 
-        return cleanup;
-    }, [selectedContact]);
+    const renderContacts = () => {
+        if (contacts.filter(c => c.lastMessage).length === 0) {
+            return <p className="mt-10 text-center text-gray-500">No contacts found.</p>;
+        }
+
+        return contacts
+            .filter(contact => contact.lastMessage)
+            .map((contact) => (
+                <div
+                    key={contact.id}
+                    className={cn(
+                        'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3 relative',
+                        selectedContact?.id === contact.id && 'bg-gray-100',
+                        unreadThreads.has(contact.id) && 'bg-blue-50'
+                    )}
+                    onClick={() => handleSelectContact(contact)}
+                >
+                    <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
+                        {contact.name?.charAt(0) || '?'}
+                        {unreadThreads.has(contact.id) && (
+                            <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
+                        )}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <div className="font-medium truncate">
+                            {contact.name || "Unknown"}
+                            {contact.lastMessageRole === 'user' && (
+                                <span className="ml-2 text-xs text-blue-500">(New)</span>
+                            )}
+                        </div>
+                        <div className="text-xs truncate text-muted-foreground">
+                            {contact.lastMessage}
+                        </div>
+                    </div>
+                    <div className="text-xs text-gray-500">{contact.time}</div>
+                </div>
+            ));
+    };
 
     return (
         <div className="flex h-full bg-gray-50">
@@ -213,113 +332,108 @@ const CommunicationPage = () => {
                     />
                 </div>
                 <ScrollArea className="h-[calc(100%-60px)]">
-                    {contacts.length === 0 && (
-                        <p className="mt-10 text-center text-gray-500">No contacts found.</p>
-                    )}
-                    {contacts.map((contact) => (
-                        <div
-                            key={contact.id}
-                            className={cn(
-                                'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3',
-                                selectedContact?.id === contact.id && 'bg-gray-100'
-                            )}
-                            onClick={() => setSelectedContact(contact)}
-                        >
-                            <div className="flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
-                                {contact.name.charAt(0)}
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <div className="font-medium truncate">{contact.name || "Unknown"}</div>
-                                <div className="text-xs truncate text-muted-foreground">
-                                    {contact.lastMessage}
-                                </div>
-                            </div>
-                            <div className="text-xs text-gray-500">{contact.time}</div>
-                        </div>
-                    ))}
+                    {renderContacts()}
                 </ScrollArea>
             </div>
 
             {/* Chat Area */}
             <div className="flex flex-col flex-1 bg-white">
-                {/* Chat Header */}
-                {selectedContact && (
-                    <div className="flex items-center justify-between p-4 border-b">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
-                                {selectedContact.name.charAt(0)}
+                {selectedContact ? (
+                    <>
+                        {/* Chat Header */}
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <div className="flex items-center gap-3">
+                                <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
+                                    {selectedContact.name.charAt(0)}
+                                    {unreadThreads.has(selectedContact.id) && (
+                                        <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="font-semibold">{selectedContact.name}</div>
+                                    <div className="text-xs text-gray-500">
+                                        {selectedContact.channel === 'whatsapp' ? (
+                                            <span className="flex items-center gap-1">
+                                                <FaWhatsapp className="text-green-500" />
+                                                WhatsApp
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1">
+                                                <FaRobot className="text-purple-500" />
+                                                ChatBot
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             <div>
-                                <div className="font-semibold">{selectedContact.name}</div>
-                                {/* <div className="flex items-center gap-1 text-xs text-green-500">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    Online
-                                </div> */}
+                                <select className="p-2 text-sm border rounded">
+                                    <option>Unassigned</option>
+                                    <option>My Team</option>
+                                </select>
                             </div>
                         </div>
-                        <div>
-                            <select className="p-2 text-sm border rounded">
-                                <option>Unassigned</option>
-                                <option>My Team</option>
-                            </select>
+
+                        {/* Messages */}
+                        <ScrollArea className="flex-1 px-4 space-y-3">
+                            {messages.map((message) => (
+                                <div
+                                    key={message.id}
+                                    className={cn(
+                                        'max-w-[80%] px-3 py-2 relative mt-4 w-fit',
+                                        message.role === 'user'
+                                            ? 'bg-[#E9E7F9] text-[#5A47A4] self-start mr-auto rounded-lg rounded-tl-none'
+                                            : 'bg-[#5A47A4] text-white self-end ml-auto rounded-lg rounded-tr-none',
+                                        message.status === 'failed' && 'opacity-70'
+                                    )}
+                                >
+                                    <div className='mr-4'>{message.content}</div>
+                                    <div className="flex items-center justify-end gap-1 mt-1">
+                                        <span className="text-xs opacity-70">{message.createdAt}</span>
+                                        {message.role === 'user' && (
+                                            <span className="text-xs">
+                                                {message.status === 'sending' && '🕒'}
+                                                {message.status === 'failed' && '❌'}
+                                                {message.status === 'sent' && '✓'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </ScrollArea>
+
+                        {/* Message Input */}
+                        <div className="p-3 border-t">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                    className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="Type a message..."
+                                    disabled={isSending}
+                                />
+                                <button
+                                    onClick={handleSendMessage}
+                                    disabled={isSending || !newMessage.trim()}
+                                    className="p-3 text-white bg-green-500 rounded-lg disabled:opacity-50"
+                                    title="Send Message"
+                                >
+                                    <FaPaperPlane />
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                            <FaRobot className="mx-auto mb-2 text-4xl text-gray-400" />
+                            <p className="text-gray-500">Select a conversation to start chatting</p>
                         </div>
                     </div>
                 )}
-
-                {/* Messages */}
-                <ScrollArea className="flex-1 px-4 space-y-3">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={cn(
-                                'max-w-[80%] px-3 py-1 relative mt-4',
-                                message.role === 'user'
-                                    ? 'bg-[#E9E7F9] text-[#5A47A4] self-start mr-auto rounded-lg rounded-tl-none'
-                                    : 'bg-[#5A47A4] text-white self-end ml-auto rounded-lg rounded-tr-none'
-                            )}
-                        >
-                            <div>{message.content}</div>
-                            <div className="flex items-center justify-end gap-1 mt-1">
-                                <span className="text-xs opacity-70">{message.createdAt}</span>
-                                {message.role === 'assistant' && (
-                                    <span className="text-xs">
-                                        {message.status === 'sending'
-                                            ? '🕒'
-                                            : message.status === 'sent'
-                                                ? '✓'
-                                                : message.status === 'delivered'
-                                                    ? '✓✓'
-                                                    : ''}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                </ScrollArea>
-
-                {/* Message Input */}
-                <div className="p-3 border-t">
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                            placeholder="Type a message..."
-                            disabled={isSending}
-                        />
-                        <button
-                            onClick={handleSendMessage}
-                            disabled={isSending || !newMessage.trim()}
-                            className="p-3 text-white bg-green-500 rounded-lg disabled:opacity-50"
-                            title="Send Message"
-                        >
-                            <FaPaperPlane />
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     );
