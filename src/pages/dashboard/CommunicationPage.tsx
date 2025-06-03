@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import ChatService from '@/services/ChatService';
 import { toast } from 'react-toastify';
 import { ChatHead, Message } from '@/types/Chat';
+import { FaTimes } from 'react-icons/fa';
 
 interface Contact {
     id: string;
@@ -25,6 +26,7 @@ const CommunicationPage = () => {
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [unreadThreads, setUnreadThreads] = useState<Set<string>>(new Set());
+    const [searchQuery, setSearchQuery] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Fetch chat heads whenever selectedChannel changes
@@ -254,45 +256,53 @@ const CommunicationPage = () => {
     };
 
     const renderContacts = () => {
-        if (contacts.filter(c => c.lastMessage).length === 0) {
+        const filteredContacts = contacts
+            .filter(contact => contact.lastMessage) // Only show contacts with messages
+            .filter(contact => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase();
+                return (
+                    contact.name.toLowerCase().includes(query) ||
+                    contact.phone.toLowerCase().includes(query)
+                );
+            });
+
+        if (filteredContacts.length === 0) {
             return <p className="mt-10 text-center text-gray-500">No contacts found.</p>;
         }
 
-        return contacts
-            .filter(contact => contact.lastMessage)
-            .map((contact) => (
-                <div
-                    key={contact.id}
-                    className={cn(
-                        'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3 relative w-[19rem]',
-                        selectedContact?.id === contact.id && 'bg-gray-100',
-                        unreadThreads.has(contact.id) && 'bg-blue-50'
+        return filteredContacts.map((contact) => (
+            <div
+                key={contact.id}
+                className={cn(
+                    'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3 relative w-[19rem]',
+                    selectedContact?.id === contact.id && 'bg-gray-100',
+                    unreadThreads.has(contact.id) && 'bg-blue-50'
+                )}
+                onClick={() => handleSelectContact(contact)}
+            >
+                {/* Avatar */}
+                <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
+                    {contact.name?.charAt(0) || '?'}
+                    {unreadThreads.has(contact.id) && (
+                        <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
                     )}
-                    onClick={() => handleSelectContact(contact)}
-                >
-                    {/* Avatar */}
-                    <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
-                        {contact.name?.charAt(0) || '?'}
-                        {unreadThreads.has(contact.id) && (
-                            <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
-                        )}
-                    </div>
-
-                    {/* Chat Info */}
-                    <div className="flex-1 overflow-hidden">
-                        {/* Top Row: Name + Time */}
-                        <div className="flex items-center justify-between">
-                            <div className="font-medium truncate">{contact.name || 'Unknown'}</div>
-                            <div className="pl-2 text-xs text-gray-500 whitespace-nowrap">{contact.createdAt}</div>
-                        </div>
-                        {/* Bottom Row: Last Message */}
-                        <div className="text-xs truncate text-muted-foreground">
-                            {contact.lastMessage}
-                        </div>
-                    </div>
                 </div>
 
-            ));
+                {/* Chat Info */}
+                <div className="flex-1 overflow-hidden">
+                    {/* Top Row: Name + Time */}
+                    <div className="flex items-center justify-between">
+                        <div className="font-medium truncate">{contact.name || 'Unknown'}</div>
+                        <div className="pl-2 text-xs text-gray-500 whitespace-nowrap">{contact.createdAt}</div>
+                    </div>
+                    {/* Bottom Row: Last Message */}
+                    <div className="text-xs truncate text-muted-foreground">
+                        {contact.lastMessage}
+                    </div>
+                </div>
+            </div>
+        ));
     };
 
     const handleMarkAsDone = async () => {
@@ -386,12 +396,23 @@ const CommunicationPage = () => {
 
             {/* Contacts List */}
             <div className="w-full p-2 bg-white border-r md:w-[20rem]">
-                <div className="p-2 mb-2 border-b">
+                <div className="relative p-2 mb-2 border-b">
                     <input
                         type="text"
                         placeholder="Search contacts..."
-                        className="w-full p-2 text-sm border rounded"
+                        className="w-full p-2 pl-3 pr-8 text-sm border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
                     />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute text-gray-400 transition-colors duration-200 transform -translate-y-1/2 right-5 top-1/2 hover:text-gray-600 focus:outline-none"
+                            aria-label="Clear search"
+                        >
+                            <FaTimes className="w-4 h-4 transition-transform hover:scale-110" />
+                        </button>
+                    )}
                 </div>
                 <ScrollArea className="h-[calc(100%-60px)]">
                     {renderContacts()}
