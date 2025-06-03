@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AuthService } from '@/services/AuthService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CompanyInfoForm } from '../CompanyInfoForm';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const pageMeta = [
     { path: 'home', title: 'Home', icon: '/icon-home.png' },
@@ -26,6 +26,8 @@ export const Navbar = () => {
     const [userFirstLetter, setUserFirstLetter] = useState<string | null>(null);
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
     const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+
+    const navigate = useNavigate();
 
     // Mutable ref to store current default company globally in this component
     const defaultCompanyRef = useRef<CompanyDropdownOption | null>(null);
@@ -61,6 +63,7 @@ export const Navbar = () => {
 
                 try {
                     await CompanyService.setDefaultCompany(newCompany.id);
+                    navigate(0);
                 } catch (error) {
                     console.warn("Failed to set default company:", error);
                 }
@@ -144,6 +147,7 @@ export const Navbar = () => {
 
                                     try {
                                         await CompanyService.setDefaultCompany(newCompanyId);
+                                        navigate(0);
                                     } catch (err) {
                                         console.warn('Failed to save default company, but ignoring:', err);
                                     }
