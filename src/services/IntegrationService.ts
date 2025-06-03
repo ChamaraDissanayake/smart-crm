@@ -20,10 +20,7 @@ export const IntegrationService = {
             ].join(",");
 
             if (!userId) {
-                console.log("Chamara user id", userId);
                 throw 'No user id found'
-            } else {
-                console.log("Chamara user id", userId);
             }
 
             const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(
@@ -34,8 +31,6 @@ export const IntegrationService = {
 
             // Add listener for messages from popup
             const handleMessage = (event: MessageEvent) => {
-                console.log("Chamara handle callback", event.data)
-                console.log("Chamara handle callback full event", event)
                 if (event.origin !== window.location.origin) return;
 
                 const { type, payload, error } = event.data;

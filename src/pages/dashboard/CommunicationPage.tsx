@@ -12,8 +12,9 @@ interface Contact {
     phone: string;
     channel: string;
     lastMessage: string;
-    lastMessageRole?: 'user' | 'assistant'; // Fixed type
-    time: string;
+    lastMessageRole?: 'user' | 'assistant';
+    createdAt: string;
+    time?: string;
 }
 
 const CommunicationPage = () => {
@@ -41,16 +42,23 @@ const CommunicationPage = () => {
                 name: head.customer.name || head.customer.phone,
                 phone: head.customer.phone,
                 lastMessage: head.lastMessage?.content || '',
-                lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined, // Type assertion
+                lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined,
                 channel: head.channel,
-                time: head.lastMessage?.createdAt
-                    ? new Date(head.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                time: head.lastMessage?.createdAt,
+                createdAt: head.lastMessage?.createdAt
+                    ? formatTime(head.lastMessage.createdAt)
                     : '',
             }));
 
+            formattedContacts.sort((a, b) => {
+                const timeA = a.time ? new Date(a.time).getTime() : 0;
+                const timeB = b.time ? new Date(b.time).getTime() : 0;
+                return timeB - timeA;
+            });
+
             setContacts(formattedContacts);
 
-            // Preserve selected contact if it still exists in the new list
+            // Update selected contact
             if (selectedContact) {
                 const stillExists = formattedContacts.some(c => c.id === selectedContact.id);
                 if (!stillExists) {
@@ -60,6 +68,42 @@ const CommunicationPage = () => {
             } else if (formattedContacts.length > 0) {
                 setSelectedContact(formattedContacts[0]);
             }
+
+            // ✅ Subscribe to all threads for real-time updates
+            formattedContacts.forEach((head) => {
+                ChatService.joinThread(head.id, (message: Message) => {
+                    // Update chat head
+                    setContacts((prev) =>
+                        prev.map((c) =>
+                            c.id === message.threadId
+                                ? {
+                                    ...c,
+                                    lastMessage: message.content,
+                                    lastMessageRole: message.role as 'user' | 'assistant',
+                                    createdAt: formatTime(message.createdAt)
+                                }
+                                : c
+                        )
+                    );
+
+                    // Append message only if currently selected and not already present
+                    if (selectedContact?.id === message.threadId) {
+                        setMessages((prev) => {
+                            const alreadyExists = prev.some((msg) => msg.id === message.id); // or msg.msgId
+
+                            if (alreadyExists) return prev;
+
+                            const formattedMessage = {
+                                ...message,
+                                createdAt: formatTime(message.createdAt)
+                            };
+
+                            return [...prev, formattedMessage];
+                        });
+                    }
+                });
+            });
+
         } catch (error) {
             console.error(error);
             toast.error('Failed to load contacts');
@@ -85,10 +129,10 @@ const CommunicationPage = () => {
                     threadId: selectedContact.id,
                     role: msg.role,
                     content: msg.content,
-                    createdAt: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    createdAt: formatTime(msg.createdAt),
                     status: msg.status,
                 }));
-                console.log('Chamara set messages 91');
+
                 setMessages(formattedMessages.reverse());
 
                 // Mark as read when opening
@@ -116,28 +160,33 @@ const CommunicationPage = () => {
         const companyId = localStorage.getItem('selectedCompany');
         if (!companyId) return;
 
+        // Subscribe to company chat events
+        ChatService.subscribeToChatSocketEvents(companyId);
+
         const handleNewMessage = (message: Message) => {
-            // Update chat heads order and mark as unread if not the current chat
+            // Update contacts list with new message and move to top
             setContacts(prev => {
                 const contactIndex = prev.findIndex(c => c.id === message.threadId);
-                if (contactIndex === -1) return prev;
+                if (contactIndex === -1) {
+                    // If this is a new thread, refresh the list
+                    fetchChatHeads();
+                    return prev;
+                }
 
                 const updatedContacts = [...prev];
                 const contact = updatedContacts[contactIndex];
 
-                updatedContacts[contactIndex] = {
+                // Update the contact with new message info
+                const updatedContact = {
                     ...contact,
                     lastMessage: message.content,
                     lastMessageRole: message.role,
-                    time: new Date(message.createdAt).toLocaleTimeString(
-                        [], { hour: '2-digit', minute: '2-digit' }
-                    )
+                    createdAt: formatTime(message.createdAt)
                 };
 
-                if (contactIndex > 0) {
-                    updatedContacts.splice(contactIndex, 1);
-                    updatedContacts.unshift(contact);
-                }
+                // Remove from current position and add to top
+                updatedContacts.splice(contactIndex, 1);
+                updatedContacts.unshift(updatedContact);
 
                 return updatedContacts;
             });
@@ -146,76 +195,39 @@ const CommunicationPage = () => {
             if (selectedContact?.id !== message.threadId) {
                 setUnreadThreads(prev => new Set(prev).add(message.threadId));
             }
-
-            // If it's the current chat, add to messages
-            if (selectedContact?.id === message.threadId) {
-                setMessages(prev => [
-                    ...prev,
-                    {
-                        id: message.id,
-                        threadId: message.threadId,
-                        content: message.content,
-                        role: message.role,
-                        createdAt: new Date(message.createdAt).toLocaleTimeString(
-                            [], { hour: '2-digit', minute: '2-digit' }
-                        ),
-                        status: message.status,
-                    },
-                ]);
-            }
         };
 
         const handleNewThread = (thread: { id: string; companyId: string }) => {
-            console.log('Chamara new thread', thread.companyId, companyId);
-
             if (thread.companyId === companyId) {
                 fetchChatHeads();
             }
         };
 
-        // Use the modified connectToChat that includes company joining
-        const cleanup = ChatService.connectToChat(
-            companyId,
-            handleNewMessage,
-            handleNewThread
-        );
+        // Setup message and thread listeners
+        const cleanupMessageListener = ChatService.onNewMessage(handleNewMessage);
+        const cleanupThreadListener = ChatService.onNewThread(handleNewThread);
 
-        return cleanup;
+        return () => {
+            cleanupMessageListener();
+            cleanupThreadListener();
+        };
     }, [selectedChannel, selectedContact, fetchChatHeads]);
 
-    // Connect to thread-specific socket when a contact is selected
     useEffect(() => {
-        if (!selectedContact) return;
+        const companyId = localStorage.getItem('selectedCompany');
+        if (companyId) {
+            ChatService.subscribeToChatSocketEvents(companyId);
 
-        const threadId = selectedContact.id;
-        const cleanup = ChatService.connectToThread(threadId, (incomingMessage) => {
-            console.log('Chamara set messages 190 commented', incomingMessage);
-            // if (incomingMessage.threadId !== threadId) return;
-
-            // setMessages(prev => [
-            //     ...prev,
-            //     {
-            //         id: incomingMessage.id,
-            //         threadId: incomingMessage.threadId,
-            //         content: incomingMessage.content,
-            //         role: incomingMessage.role,
-            //         createdAt: new Date(incomingMessage.createdAt).toLocaleTimeString([], {
-            //             hour: '2-digit',
-            //             minute: '2-digit',
-            //         }),
-            //         status: incomingMessage.status,
-            //     },
-            // ]);
-        });
-
-        return cleanup;
-    }, [selectedContact]);
+            return () => {
+                ChatService.cleanupAllListeners();
+            };
+        }
+    }, []);
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || isSending || !selectedContact) return;
-
         setIsSending(true);
-        setNewMessage(''); // Clear input immediately but keep disabled
+        setNewMessage('');
 
         try {
             if (selectedContact.channel === 'whatsapp') {
@@ -223,12 +235,12 @@ const CommunicationPage = () => {
             } else if (selectedContact.channel === 'web') {
                 await ChatService.sendWebMessage(selectedContact.id, newMessage);
             }
-            // Don't update UI here - wait for socket event
         } catch (error) {
             console.error('Failed to send message:', error);
             toast.error('Failed to send message');
+            setNewMessage(newMessage);
+        } finally {
             setIsSending(false);
-            setNewMessage(newMessage); // Restore the message if failed
         }
     };
 
@@ -252,33 +264,83 @@ const CommunicationPage = () => {
                 <div
                     key={contact.id}
                     className={cn(
-                        'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3 relative',
+                        'p-3 rounded-md cursor-pointer hover:bg-gray-50 flex items-center gap-3 relative w-[19rem]',
                         selectedContact?.id === contact.id && 'bg-gray-100',
                         unreadThreads.has(contact.id) && 'bg-blue-50'
                     )}
                     onClick={() => handleSelectContact(contact)}
                 >
+                    {/* Avatar */}
                     <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
                         {contact.name?.charAt(0) || '?'}
                         {unreadThreads.has(contact.id) && (
                             <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
                         )}
                     </div>
+
+                    {/* Chat Info */}
                     <div className="flex-1 overflow-hidden">
-                        <div className="font-medium truncate">
-                            {contact.name || "Unknown"}
-                            {contact.lastMessageRole === 'user' && (
-                                <span className="ml-2 text-xs text-blue-500">(New)</span>
-                            )}
+                        {/* Top Row: Name + Time */}
+                        <div className="flex items-center justify-between">
+                            <div className="font-medium truncate">{contact.name || 'Unknown'}</div>
+                            <div className="pl-2 text-xs text-gray-500 whitespace-nowrap">{contact.createdAt}</div>
                         </div>
+                        {/* Bottom Row: Last Message */}
                         <div className="text-xs truncate text-muted-foreground">
                             {contact.lastMessage}
                         </div>
                     </div>
-                    <div className="text-xs text-gray-500">{contact.time}</div>
                 </div>
+
             ));
     };
+
+    const handleMarkAsDone = async () => {
+        if (!selectedContact?.id) {
+            toast.warn('No contact selected');
+            return;
+        }
+
+        const confirm = window.confirm('Are you sure to mark this conversation as done?');
+        if (!confirm) return;
+
+        try {
+            // First send the closing message
+            setIsSending(true);
+            const closingMessage = 'Thank you for contacting us. Have a nice day!';
+
+            if (selectedContact.channel === 'whatsapp') {
+                await ChatService.sendWhatsAppMessage(selectedContact.phone, closingMessage);
+            } else if (selectedContact.channel === 'web') {
+                await ChatService.sendWebMessage(selectedContact.id, closingMessage);
+            }
+
+            // Then mark as done
+            await ChatService.markAsDone(selectedContact.id);
+
+            toast.success('Conversation marked as done');
+
+            // Update UI
+            setContacts(prev => prev.filter(c => c.id !== selectedContact.id));
+            setSelectedContact(null);
+            setMessages([]);
+        } catch (error) {
+            console.error('Failed to mark as done:', error);
+            toast.error('Failed to complete the operation');
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    //Helper method to format date
+    const formatTime = (dateInput: string | number | Date): string => {
+        return new Date(dateInput).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
 
     return (
         <div className="flex h-full bg-gray-50">
@@ -323,7 +385,7 @@ const CommunicationPage = () => {
             </div>
 
             {/* Contacts List */}
-            <div className="w-full p-2 bg-white border-r md:w-64">
+            <div className="w-full p-2 bg-white border-r md:w-[20rem]">
                 <div className="p-2 mb-2 border-b">
                     <input
                         type="text"
@@ -366,13 +428,25 @@ const CommunicationPage = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div>
+
+                            <div className="flex items-center gap-4">
                                 <select className="p-2 text-sm border rounded">
                                     <option>Unassigned</option>
                                     <option>My Team</option>
                                 </select>
+
+                                {/* Mark as Done button */}
+                                <button
+                                    onClick={handleMarkAsDone}
+                                    className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700"
+                                >
+                                    Mark as Done
+                                </button>
+
+
                             </div>
                         </div>
+
 
                         {/* Messages */}
                         <ScrollArea className="flex-1 px-4 space-y-3">

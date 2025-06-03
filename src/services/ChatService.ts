@@ -7,61 +7,94 @@ import { AuthService } from "./AuthService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const ChatService = {
+// Map to keep track of active message listeners for threads
+const activeThreadListeners = new Map<string, (msg: Message) => void>();
 
-    connectToChat: (
-        companyId: string,
-        onNewMessage: (msg: Message) => void,
-        onNewThread: (thread: { id: string; companyId: string }) => void
-    ) => {
+// Single variable for current company event listener
+let currentCompanyListener: ((err: unknown) => void) | null = null;
+
+const ChatService = {
+    subscribeToChatSocketEvents: (companyId: string) => {
+
         if (!socket.connected) {
             socket.connect();
         }
 
-        // Join company room
+        // Remove any existing listener for connect_error
+        if (currentCompanyListener) {
+            socket.off("connect_error", currentCompanyListener);
+            currentCompanyListener = null;
+            console.log("Removed existing company socket listener");
+        }
+
         socket.emit("join-company", companyId);
+        console.log("Joined company room:", companyId);
 
-        // Setup general listeners
-        socket.on("new-message", onNewMessage);
-
-        console.log("Joining company room:", companyId);
-        socket.on("new-thread", (thread) => {
-            console.log("Received new-thread event:", thread);
-            onNewThread(thread);
-        });
-
-
-        socket.on("connect_error", (err) => {
+        // Add fresh listener
+        currentCompanyListener = (err) => {
             console.error("Socket connection error:", err);
-        });
+        };
 
+        socket.on("connect_error", currentCompanyListener);
+
+        // Optional unsubscribe logic
         return () => {
-            socket.off("new-message", onNewMessage);
-            socket.off("new-thread", onNewThread);
+            if (currentCompanyListener) {
+                socket.off("connect_error", currentCompanyListener);
+                currentCompanyListener = null;
+                console.log("Unsubscribed from company socket events");
+            }
         };
     },
 
-    connectToThread: (threadId: string, onMessage: (msg: Message) => void) => {
+    joinThread: (threadId: string, onMessage: (msg: Message) => void) => {
+
         if (!socket.connected) {
             socket.connect();
+        }
+
+        // Remove existing listener for this thread to avoid duplicates
+        const existingListener = activeThreadListeners.get(threadId);
+        if (existingListener) {
+            socket.off("new-message", existingListener);
+            activeThreadListeners.delete(threadId);
+            console.log("existing listener detected");
         }
 
         socket.emit("join-thread", threadId);
 
-        const messageListener = (incomingMessage: Message) => {
-            if (incomingMessage.threadId === threadId) {
-                onMessage(incomingMessage);
+        const messageListener = (msg: Message) => {
+            if (msg.threadId === threadId) {
+                onMessage(msg);
             }
         };
 
         socket.on("new-message", messageListener);
+        activeThreadListeners.set(threadId, messageListener);
 
         return () => {
             socket.off("new-message", messageListener);
+            activeThreadListeners.delete(threadId);
         };
     },
 
-    //Use this to send Whatsapp messages only
+    onNewMessage: (callback: (msg: Message) => void) => {
+        socket.on("new-message", callback);
+
+        return () => {
+            socket.off("new-message", callback);
+        };
+    },
+
+    onNewThread: (callback: (thread: { id: string; companyId: string }) => void) => {
+        socket.on("new-thread", callback);
+
+        return () => {
+            socket.off("new-thread", callback);
+        };
+    },
+
+    // Use this to send Whatsapp messages only
     sendWhatsAppMessage: async (to: string, message: string) => {
         try {
             const companyId = localStorage.getItem('selectedCompany');
@@ -108,7 +141,6 @@ const ChatService = {
             const res = await api.get('/chat/chat-history', {
                 params: { threadId, offset }
             });
-            console.log('Chamara chat data', res.data);
 
             return res.data;
         } catch (error) {
@@ -123,6 +155,23 @@ const ChatService = {
             console.log(res);
         } catch (error) {
             console.log(error);
+        }
+    },
+
+    markAsDone: async (threadId: string) => {
+        try {
+            const res = await api.patch(`/chat/mark-as-done`, { threadId });
+            console.log(res);
+        } catch (error) {
+            console.log(error);
+        }
+    },
+
+    cleanupAllListeners: () => {
+        if (socket.connected) {
+            socket.removeAllListeners();
+            socket.disconnect();
+            console.log("Socket disconnected.");
         }
     }
 
