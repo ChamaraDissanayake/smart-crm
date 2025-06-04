@@ -113,7 +113,6 @@ export const Navbar = () => {
 
     useEffect(() => {
         if (selectedCompanyId) {
-            // console.log('Chamara Selected company updated:', selectedCompanyId);
             // Add any logic you want here (e.g., fetch company-specific data)
             localStorage.setItem('selectedCompany', selectedCompanyId);
         }
@@ -185,7 +184,7 @@ export const Navbar = () => {
 
             {/* Company Creation Modal */}
             <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Create New Company</DialogTitle>
                     </DialogHeader>

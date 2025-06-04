@@ -8,6 +8,7 @@ import { ChatHead, Message } from '@/types/Chat';
 import { FaTimes } from 'react-icons/fa';
 import { UserService } from '@/services/UserService';
 import { User } from '@/types/User';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 interface Contact {
     id: string;
@@ -65,7 +66,6 @@ const CommunicationPage = () => {
                 const timeB = b.time ? new Date(b.time).getTime() : 0;
                 return timeB - timeA;
             });
-            // console.log('Chamara formatted contacts', formattedContacts);
 
             setContacts(formattedContacts);
 
@@ -240,7 +240,6 @@ const CommunicationPage = () => {
             const companyId = localStorage.getItem('selectedCompany');
             if (companyId) {
                 const users = await UserService.getUsers(companyId);
-                console.log('Chamara users component', users);
                 setUsers(users);
             }
         };
@@ -382,14 +381,15 @@ const CommunicationPage = () => {
     }, [selectedContact]);
 
     // Add this handler function
-    const handleAssigneeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newAssignee = e.target.value;
+    const handleAssigneeChange = async (value: string) => {
+        const newAssignee = value === 'unassigned' ? '' : value;
+
         if (!selectedContact?.id) return;
 
         try {
             setSelectedAssignee(newAssignee);
 
-            let chatHandler = 'bot'
+            let chatHandler = 'bot';
             let assignedAgentId = null;
 
             if (newAssignee) {
@@ -397,11 +397,8 @@ const CommunicationPage = () => {
                 assignedAgentId = newAssignee;
             }
 
-            console.log('Chamara new assignee', chatHandler, assignedAgentId);
-
             await ChatService.assignChat(selectedContact.id, chatHandler, assignedAgentId);
 
-            // Update the contact in the local state
             setContacts(prev =>
                 prev.map(c =>
                     c.id === selectedContact.id
@@ -414,10 +411,11 @@ const CommunicationPage = () => {
         } catch (error) {
             console.error('Failed to update assignee:', error);
             toast.error('Failed to update assignee');
-            // Revert on error
             setSelectedAssignee(selectedContact.assignee || '');
         }
     };
+
+
 
 
     return (
@@ -488,7 +486,7 @@ const CommunicationPage = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex flex-col flex-1 bg-white">
+            <div className="flex flex-col flex-1 bg-white min-w-[480px]">
                 {selectedContact ? (
                     <>
                         {/* Chat Header */}
@@ -519,19 +517,25 @@ const CommunicationPage = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <select
-                                    className="max-w-[8rem] w-full truncate p-2 text-sm border rounded"
-                                    value={selectedAssignee}
-                                    onChange={handleAssigneeChange}
-                                    disabled={!selectedContact}
-                                >
-                                    <option value="">Unassigned</option>
-                                    {users.map((user) => (
-                                        <option key={user.id} value={user.id}>
-                                            {user.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="bg-white rounded-md w-[8rem] text-sm">
+                                    <Select
+                                        value={selectedAssignee || 'unassigned'}
+                                        onValueChange={handleAssigneeChange}
+                                        disabled={!selectedContact}
+                                    >
+                                        <SelectTrigger className="flex items-center justify-between max-w-[8rem] w-full p-2 text-sm border rounded [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0">
+                                            <SelectValue className="truncate" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                                            {users.map((user) => (
+                                                <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                </div>
+
 
 
                                 {/* Mark as Done button */}
