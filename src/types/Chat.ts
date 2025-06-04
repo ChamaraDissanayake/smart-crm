@@ -4,6 +4,8 @@ export interface ChatHead {
     id: string;
     channel: string;
     customer: Customer;
+    currentHandler: 'bot' | 'agent';
+    assignee: string;
     lastMessage?: {
         content: string,
         role: string,

@@ -3,7 +3,6 @@ import axios from "axios";
 import socket from "./helpers/socket";
 import api from './Api';
 import { Message } from "@/types/Chat";
-import { AuthService } from "./AuthService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -24,11 +23,9 @@ const ChatService = {
         if (currentCompanyListener) {
             socket.off("connect_error", currentCompanyListener);
             currentCompanyListener = null;
-            console.log("Removed existing company socket listener");
         }
 
         socket.emit("join-company", companyId);
-        console.log("Joined company room:", companyId);
 
         // Add fresh listener
         currentCompanyListener = (err) => {
@@ -42,7 +39,6 @@ const ChatService = {
             if (currentCompanyListener) {
                 socket.off("connect_error", currentCompanyListener);
                 currentCompanyListener = null;
-                console.log("Unsubscribed from company socket events");
             }
         };
     },
@@ -58,7 +54,6 @@ const ChatService = {
         if (existingListener) {
             socket.off("new-message", existingListener);
             activeThreadListeners.delete(threadId);
-            console.log("existing listener detected");
         }
 
         socket.emit("join-thread", threadId);
@@ -128,6 +123,7 @@ const ChatService = {
             const res = await api.get('/chat/chat-heads', {
                 params: { companyId, channel }
             });
+            console.log('Chamara contacts', res.data);
 
             return res.data;
         } catch (error) {
@@ -148,10 +144,9 @@ const ChatService = {
         }
     },
 
-    assignChat: async (assignee: string, threadId: string) => {
+    assignChat: async (threadId: string, chatHandler: string, assignedAgentId: string | null) => {
         try {
-            const userId = AuthService.getCurrentUserId();
-            const res = await api.patch(`/chat/assign`, { threadId, userId, assignee });
+            const res = await api.patch(`/chat/assign`, { threadId, chatHandler, assignedAgentId });
             console.log(res);
         } catch (error) {
             console.log(error);
@@ -171,7 +166,6 @@ const ChatService = {
         if (socket.connected) {
             socket.removeAllListeners();
             socket.disconnect();
-            console.log("Socket disconnected.");
         }
     }
 

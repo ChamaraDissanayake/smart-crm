@@ -6,6 +6,8 @@ import ChatService from '@/services/ChatService';
 import { toast } from 'react-toastify';
 import { ChatHead, Message } from '@/types/Chat';
 import { FaTimes } from 'react-icons/fa';
+import { UserService } from '@/services/UserService';
+import { User } from '@/types/User';
 
 interface Contact {
     id: string;
@@ -14,6 +16,8 @@ interface Contact {
     channel: string;
     lastMessage: string;
     lastMessageRole?: 'user' | 'assistant';
+    currentHandler: 'bot' | 'agent';
+    assignee: string;
     createdAt: string;
     time?: string;
 }
@@ -27,6 +31,8 @@ const CommunicationPage = () => {
     const [isSending, setIsSending] = useState(false);
     const [unreadThreads, setUnreadThreads] = useState<Set<string>>(new Set());
     const [searchQuery, setSearchQuery] = useState('');
+    const [users, setUsers] = useState<User[]>([]);
+    const [selectedAssignee, setSelectedAssignee] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Fetch chat heads whenever selectedChannel changes
@@ -46,6 +52,8 @@ const CommunicationPage = () => {
                 lastMessage: head.lastMessage?.content || '',
                 lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined,
                 channel: head.channel,
+                currentHandler: head.currentHandler,
+                assignee: head.assignee,
                 time: head.lastMessage?.createdAt,
                 createdAt: head.lastMessage?.createdAt
                     ? formatTime(head.lastMessage.createdAt)
@@ -57,6 +65,7 @@ const CommunicationPage = () => {
                 const timeB = b.time ? new Date(b.time).getTime() : 0;
                 return timeB - timeA;
             });
+            // console.log('Chamara formatted contacts', formattedContacts);
 
             setContacts(formattedContacts);
 
@@ -226,6 +235,18 @@ const CommunicationPage = () => {
         }
     }, []);
 
+    useEffect(() => {
+        const getCompanyUsers = async () => {
+            const companyId = localStorage.getItem('selectedCompany');
+            if (companyId) {
+                const users = await UserService.getUsers(companyId);
+                console.log('Chamara users component', users);
+                setUsers(users);
+            }
+        };
+        getCompanyUsers();
+    }, []);
+
     const handleSendMessage = async () => {
         if (!newMessage.trim() || isSending || !selectedContact) return;
         setIsSending(true);
@@ -352,6 +373,53 @@ const CommunicationPage = () => {
     };
 
 
+    // Update this when selectedContact changes
+    useEffect(() => {
+        if (selectedContact) {
+            const assignee = selectedContact.currentHandler === 'bot' ? '' : selectedContact.assignee || '';
+            setSelectedAssignee(assignee);
+        }
+    }, [selectedContact]);
+
+    // Add this handler function
+    const handleAssigneeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newAssignee = e.target.value;
+        if (!selectedContact?.id) return;
+
+        try {
+            setSelectedAssignee(newAssignee);
+
+            let chatHandler = 'bot'
+            let assignedAgentId = null;
+
+            if (newAssignee) {
+                chatHandler = 'agent';
+                assignedAgentId = newAssignee;
+            }
+
+            console.log('Chamara new assignee', chatHandler, assignedAgentId);
+
+            await ChatService.assignChat(selectedContact.id, chatHandler, assignedAgentId);
+
+            // Update the contact in the local state
+            setContacts(prev =>
+                prev.map(c =>
+                    c.id === selectedContact.id
+                        ? { ...c, assignee: newAssignee }
+                        : c
+                )
+            );
+
+            toast.success('Assignee updated');
+        } catch (error) {
+            console.error('Failed to update assignee:', error);
+            toast.error('Failed to update assignee');
+            // Revert on error
+            setSelectedAssignee(selectedContact.assignee || '');
+        }
+    };
+
+
     return (
         <div className="flex h-full bg-gray-50">
             {/* Channels Sidebar */}
@@ -451,10 +519,20 @@ const CommunicationPage = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <select className="p-2 text-sm border rounded">
-                                    <option>Unassigned</option>
-                                    <option>My Team</option>
+                                <select
+                                    className="max-w-[8rem] w-full truncate p-2 text-sm border rounded"
+                                    value={selectedAssignee}
+                                    onChange={handleAssigneeChange}
+                                    disabled={!selectedContact}
+                                >
+                                    <option value="">Unassigned</option>
+                                    {users.map((user) => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
                                 </select>
+
 
                                 {/* Mark as Done button */}
                                 <button
