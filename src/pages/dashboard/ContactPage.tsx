@@ -66,17 +66,13 @@ const ContactPage = () => {
     const handleSubmitContact = async (contactData: Omit<Contact, 'id'>) => {
         try {
             if (contactModalMode === 'create') {
-                console.log('Chamara - if:', contactData);
                 const newContact = await OpportunityService.createContact(contactData);
                 if (newContact) {
-                    setContacts(prev => [...prev, newContact]);
+                    setContacts(prev => [newContact, ...prev]);
                 }
             } else if (contactModalMode === 'edit' && selectedContact) {
-                // console.log('Chamara - else if:', contactData);
                 const updatedContact = await OpportunityService.updateContact(selectedContact.id, contactData);
                 if (updatedContact) {
-                    console.log('Chamara - updatedContact:', updatedContact);
-
                     setContacts(prev => prev.map(c => c.id === selectedContact.id ? updatedContact : c));
                 }
             }
@@ -87,10 +83,6 @@ const ContactPage = () => {
         }
     };
 
-    // const filteredContacts = contacts.filter(c =>
-    //     (c.name || 'unknown').toLowerCase().includes(searchTerm.toLowerCase())
-    // );
-
     const filteredContacts = contacts.filter(contact => {
         if (!searchTerm) return true;
         const query = searchTerm.toLowerCase().trim();
@@ -99,7 +91,6 @@ const ContactPage = () => {
             (contact.phone ? contact.phone.includes(query) : false)
         );
     });
-
 
     return (
         <div className="flex flex-col h-full bg-white">

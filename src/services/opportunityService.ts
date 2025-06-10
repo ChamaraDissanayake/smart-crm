@@ -76,7 +76,7 @@ export const OpportunityService = {
                 companyId
             });
             toast.success('Contact created successfully!');
-            return data;
+            return data.customer;
         } catch (error) {
             toast.error('Failed to create contact');
             console.error('Error creating contact:', error);
