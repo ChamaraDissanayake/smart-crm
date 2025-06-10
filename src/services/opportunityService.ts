@@ -1,11 +1,7 @@
 import { generateLeads } from "./helpers/generateLeads";
-
-export interface Contact {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-}
+import { toast } from 'react-toastify';
+import api from './Api';
+import { Contact } from "@/types/Contact";
 
 export interface Lead {
     id: number;
@@ -18,26 +14,26 @@ export interface Lead {
 
 export interface NewLeadData {
     name: string;
-    contactId: number;
+    contactId: string;
     expectedRevenue: number;
     priority: 'low' | 'medium' | 'high';
     stage: string;
 }
 
 export const OpportunityService = {
-    getStages: (): string[] => {
-        return ['New', 'Qualified', 'Proposition', 'Won', 'Lost'];
-    },
+
+
 
     getContacts: (): Contact[] => {
         return [
-            { id: 1, name: 'John Smith', email: 'john@example.com', phone: '123-456-7890' },
-            { id: 2, name: 'Sarah Johnson', email: 'sarah@example.com', phone: '234-567-8901' },
-            { id: 3, name: 'Michael Brown', email: 'michael@example.com', phone: '345-678-9012' },
-            { id: 4, name: 'Emily Davis', email: 'emily@example.com', phone: '456-789-0123' },
-            { id: 5, name: 'Robert Wilson', email: 'robert@example.com', phone: '567-890-1234' },
+            { id: '1', name: 'John Smith', email: 'john@example.com', phone: '123-456-7890' },
+            { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '234-567-8901' },
+            { id: '3', name: 'Michael Brown', email: 'michael@example.com', phone: '345-678-9012' },
+            { id: '4', name: 'Emily Davis', email: 'emily@example.com', phone: '456-789-0123' },
+            { id: '5', name: 'Robert Wilson', email: 'robert@example.com', phone: '567-890-1234' },
         ];
     },
+
 
     getLeads: (): Lead[] => {
         const contacts = OpportunityService.getContacts();
@@ -57,12 +53,67 @@ export const OpportunityService = {
         return Promise.resolve(newLead);
     },
 
-    createContact: (contactData: Omit<Contact, 'id'>): Promise<Contact> => {
-        const newContact: Contact = {
-            id: Math.max(0, ...OpportunityService.getContacts().map(c => c.id)) + 1,
-            ...contactData
-        };
-        return Promise.resolve(newContact);
+    getStages: (): string[] => {
+        return ['New', 'Qualified', 'Proposition', 'Won', 'Lost'];
+    },
+
+    getCompanyContacts: async (): Promise<Contact[]> => {
+        try {
+            const companyId = localStorage.getItem('selectedCompany');
+            const { data } = await api.get('/customer/get-customers', {
+                params: { companyId, limit: 100, offset: 0 },
+            });
+            return data.contacts || [];
+        } catch (error) {
+            toast.error('Failed to fetch contacts');
+            console.error('Error fetching contacts:', error);
+            return [];
+        }
+    },
+
+    createContact: async (contactData: Omit<Contact, 'id'>): Promise<Contact | null> => {
+        try {
+            const companyId = localStorage.getItem('selectedCompany');
+            const { data } = await api.post('/customer/create-customer', {
+                ...contactData,
+                companyId
+            });
+            toast.success('Contact created successfully!');
+            return data;
+        } catch (error) {
+            toast.error('Failed to create contact');
+            console.error('Error creating contact:', error);
+            return null;
+        }
+    },
+
+    updateContact: async (contactId: string, contactData: Omit<Contact, 'id'>): Promise<Contact | null> => {
+        try {
+            const companyId = localStorage.getItem('selectedCompany');
+            const { data } = await api.post(`/customer/update-customer`, {
+                id: contactId,
+                companyId,
+                ...contactData
+            });
+            toast.success('Contact updated successfully!');
+            return data.customer;
+        } catch (error) {
+            toast.error('Failed to update contact');
+            console.error('Error updating contact:', error);
+            return null;
+        }
+    },
+
+    deleteContact: async (contactId: string): Promise<boolean> => {
+        try {
+            await api.delete(`/customer/delete-customer/${contactId}`);
+            toast.success('Contact deleted successfully!');
+            return true;
+        } catch (error) {
+            toast.error('Failed to delete contact');
+            console.error('Error deleting contact:', error);
+            return false;
+        }
     },
 
     updateLeadStage: (leadId: number, newStage: string): Promise<boolean> => {

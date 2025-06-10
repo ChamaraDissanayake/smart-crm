@@ -16,8 +16,6 @@ export const UserService = {
             email: user.email,
         }));
 
-        console.log('Chamara service users', users);
-
         return users;
     },
 };

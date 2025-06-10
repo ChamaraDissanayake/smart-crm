@@ -3,12 +3,12 @@ import { PlusCircle } from 'lucide-react';
 import {
     OpportunityService,
     Lead,
-    Contact,
     NewLeadData,
 } from '../../services/OpportunityService';
 import { CreateLeadModal } from '../../components/CreateLeadModal';
-import { CreateContactModal } from '../../components/CreateContactModal';
+import { ContactModal } from '../../components/ContactModal';
 import { Button } from '@/components/ui/button';
+import { Contact } from '@/types/Contact';
 
 const CRMPage = () => {
     const [stages, setStages] = useState<string[]>([]);
@@ -36,7 +36,9 @@ const CRMPage = () => {
     const handleCreateContact = async (contactData: Omit<Contact, 'id'>) => {
         try {
             const newContact = await OpportunityService.createContact(contactData);
-            setContacts([...contacts, newContact]);
+            if (newContact) {
+                setContacts([...contacts, newContact]);
+            }
         } catch (error) {
             console.error('Failed to create contact:', error);
         }
@@ -174,10 +176,11 @@ const CRMPage = () => {
                 stages={stages}
             />
 
-            <CreateContactModal
+            <ContactModal
                 isOpen={isContactModalOpen}
                 onClose={() => setIsContactModalOpen(false)}
-                onCreate={handleCreateContact}
+                onSubmit={handleCreateContact} // replaces onCreate
+                mode="create"
             />
         </div>
     );

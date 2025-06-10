@@ -123,7 +123,6 @@ const ChatService = {
             const res = await api.get('/chat/chat-heads', {
                 params: { companyId, channel }
             });
-            console.log('Chamara contacts', res.data);
 
             return res.data;
         } catch (error) {

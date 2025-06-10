@@ -277,7 +277,7 @@ const CommunicationPage = () => {
 
     const renderContacts = () => {
         const filteredContacts = contacts
-            .filter(contact => contact.lastMessage) // Only show contacts with messages
+            // .filter(contact => contact.lastMessage) // Only show contacts with messages
             .filter(contact => {
                 if (!searchQuery) return true;
                 const query = searchQuery.toLowerCase();
