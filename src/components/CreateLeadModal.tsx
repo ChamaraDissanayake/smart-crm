@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Contact, NewLeadData } from '../services/OpportunityService';
+import { NewLeadData } from '../services/OpportunityService';
 import {
     Select,
     SelectTrigger,
@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Contact } from '@/types/Contact';
 
 interface CreateLeadModalProps {
     isOpen: boolean;
@@ -28,7 +29,7 @@ export const CreateLeadModal = ({
 }: CreateLeadModalProps) => {
     const [formData, setFormData] = useState<NewLeadData>({
         name: '',
-        contactId: contacts[0]?.id || 0,
+        contactId: contacts[0]?.id || '',
         expectedRevenue: 0,
         priority: 'medium',
         stage: stages[0] || 'New'
@@ -68,7 +69,7 @@ export const CreateLeadModal = ({
                             <Label>Contact</Label>
                             <Select
                                 value={formData.contactId.toString()}
-                                onValueChange={(value) => setFormData({ ...formData, contactId: Number(value) })}
+                                onValueChange={(value) => setFormData({ ...formData, contactId: (value) })}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select contact" />

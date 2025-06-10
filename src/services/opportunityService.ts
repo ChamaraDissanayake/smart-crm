@@ -21,9 +21,6 @@ export interface NewLeadData {
 }
 
 export const OpportunityService = {
-
-
-
     getContacts: (): Contact[] => {
         return [
             { id: '1', name: 'John Smith', email: 'john@example.com', phone: '123-456-7890' },
