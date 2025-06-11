@@ -58,13 +58,27 @@ export const OpportunityService = {
         try {
             const companyId = localStorage.getItem('selectedCompany');
             const { data } = await api.get('/customer/get-customers', {
-                params: { companyId, limit: 100, offset: 0 },
+                params: { companyId, limit: 1000, offset: 0 },
             });
             return data.contacts || [];
         } catch (error) {
             toast.error('Failed to fetch contacts');
             console.error('Error fetching contacts:', error);
             return [];
+        }
+    },
+
+    getCompanyContactCount: async (): Promise<number> => {
+        try {
+            const companyId = localStorage.getItem('selectedCompany');
+            const { data } = await api.get('/customer/get-count', {
+                params: { companyId },
+            });
+            return data.customerCount || 0;
+        } catch (error) {
+            toast.error('Failed to fetch contacts');
+            console.error('Error fetching contacts:', error);
+            return 0;
         }
     },
 

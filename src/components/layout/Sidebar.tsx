@@ -81,7 +81,7 @@ export const Sidebar = () => {
                         onClick={handleTopLevelClick}
                     >
                         <MessageSquare size={18} />
-                        {renderLabel("Communication")}
+                        {renderLabel("Conversations")}
                     </Link>
                 </li>
                 <li>

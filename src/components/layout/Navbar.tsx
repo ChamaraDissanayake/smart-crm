@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const pageMeta = [
     { path: 'home', title: 'Home', icon: '/icon-home.png' },
     { path: 'contacts', title: 'Contacts', icon: '/icon-contact.png' },
-    { path: 'communication', title: 'Communication', icon: '/icon-communication.png' },
+    { path: 'communication', title: 'Conversations', icon: '/icon-communication.png' },
     { path: 'crm', title: 'CRM', icon: '/icon-crm.png' },
     { path: 'sales-products', title: 'Sales', icon: '/icon-sales.png' },
     { path: 'sales-quotation', title: 'Sales', icon: '/icon-sales.png' },
