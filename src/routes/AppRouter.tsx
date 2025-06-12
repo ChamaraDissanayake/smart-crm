@@ -22,6 +22,7 @@ import TeamPage from '@/pages/dashboard/settings/TeamPage';
 import ProductsPage from '@/pages/dashboard/sales/ProductsPage';
 import QuotationPage from '@/pages/dashboard/sales/QuotationPage';
 import InvoicingPage from '@/pages/dashboard/sales/InvoicingPage';
+import FollowUpsPage from '@/pages/dashboard/FollowUpsPage';
 
 const AppRouter = () => {
     return (
@@ -46,6 +47,7 @@ const AppRouter = () => {
                     <Route path="home" element={<HomePage />} />
                     <Route path="contacts" element={<ContactPage />} />
                     <Route path="communication" element={<CommunicationPage />} />
+                    <Route path="follow-ups" element={<FollowUpsPage />} />
                     <Route path="crm" element={<CRMPage />} />
                     <Route path="sales-products" element={<ProductsPage />} />
                     <Route path="sales-quotation" element={<QuotationPage />} />

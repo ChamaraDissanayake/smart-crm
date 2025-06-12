@@ -1,19 +1,19 @@
 import { Outlet } from 'react-router-dom';
-import { Navbar } from '../components/layout/Navbar.tsx';
-import { Sidebar } from '../components/layout/Sidebar.tsx';
+import { Navbar } from '../components/layout/Navbar';
+import { Sidebar } from '../components/layout/Sidebar';
 
 const DashboardLayout = () => {
     return (
-        <div className="flex flex-col h-screen bg-gray-100">
-            {/* Top Navigation */}
-            <Navbar />
+        <div className="flex h-screen bg-gray-100">
+            {/* Sidebar from top to bottom on the left */}
+            <Sidebar />
 
-            {/* Content Area (Sidebar + Page Content) */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar below Navbar */}
-                <Sidebar />
+            {/* Right side: Navbar at top, content below */}
+            <div className="flex flex-col flex-1 overflow-hidden">
+                {/* Top navbar inside content area */}
+                <Navbar />
 
-                {/* Main Content Area */}
+                {/* Main scrollable content area */}
                 <main className="flex-1 overflow-y-auto bg-white">
                     <Outlet />
                 </main>

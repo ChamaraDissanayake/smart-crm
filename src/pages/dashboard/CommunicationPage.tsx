@@ -9,6 +9,9 @@ import { FaTimes } from 'react-icons/fa';
 import { UserService } from '@/services/UserService';
 import { User } from '@/types/User';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { ChevronsUp } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface Contact {
     id: string;
@@ -34,6 +37,7 @@ const CommunicationPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [users, setUsers] = useState<User[]>([]);
     const [selectedAssignee, setSelectedAssignee] = useState<string>('');
+    const [isFollowUp, setIsFollowUp] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Fetch chat heads whenever selectedChannel changes
@@ -206,6 +210,9 @@ const CommunicationPage = () => {
             if (selectedContact?.id !== message.threadId) {
                 setUnreadThreads(prev => new Set(prev).add(message.threadId));
             }
+
+            console.log('Chamara selected:', selectedChannel, message, contacts);
+
         };
 
         const handleNewThread = (thread: { id: string; companyId: string }) => {
@@ -222,7 +229,7 @@ const CommunicationPage = () => {
             cleanupMessageListener();
             cleanupThreadListener();
         };
-    }, [selectedChannel, selectedContact, fetchChatHeads]);
+    }, [selectedChannel, selectedContact, fetchChatHeads, contacts]);
 
     useEffect(() => {
         const companyId = localStorage.getItem('selectedCompany');
@@ -362,6 +369,11 @@ const CommunicationPage = () => {
         }
     };
 
+    const handleFollowUp = async () => {
+        console.log('Follow up clicked');
+        setIsFollowUp(prev => !prev);
+    }
+
     //Helper method to format date
     const formatTime = (dateInput: string | number | Date): string => {
         return new Date(dateInput).toLocaleTimeString([], {
@@ -500,7 +512,7 @@ const CommunicationPage = () => {
                                 </div>
                                 <div>
                                     <div className="font-semibold">{selectedContact.name}</div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
                                         {selectedContact.channel === 'whatsapp' ? (
                                             <span className="flex items-center gap-1">
                                                 <FaWhatsapp className="text-green-500" />
@@ -512,7 +524,18 @@ const CommunicationPage = () => {
                                                 ChatBot
                                             </span>
                                         )}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <ChevronsUp size={18} className={isFollowUp ? "text-green-500" : "text-gray-400"} onClick={handleFollowUp} />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Toggle Follow Up</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </div>
+
                                 </div>
                             </div>
 

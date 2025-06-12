@@ -26,7 +26,7 @@ const ChoosePlanPage = () => {
         selectedPlan,
         billingCycle
       );
-      navigate('/dashboard/crm');
+      navigate('/dashboard/home');
     } catch (error) {
       console.log('Error subscribing to plan:', error);
     }

@@ -151,7 +151,7 @@ export default function HomePage() {
                 <Card>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-1 text-sm font-semibold">
-                            <span className="font-bold text-purple-600">AI</span> AI Sales Summary
+                            <span className="font-bold text-purple-600">AI</span> Sales Summary
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Our growth is strong this month, with 20 deals won, totaling 15.500 in revenue.
@@ -161,7 +161,7 @@ export default function HomePage() {
                 <Card>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-1 text-sm font-semibold">
-                            <span className="font-bold text-purple-600">AI</span> AI Activity Summary
+                            <span className="font-bold text-purple-600">AI</span> Activity Summary
                         </div>
                         <p className="text-sm text-muted-foreground">
                             You have six pending tasks and 15 follow-ups scheduled for next week.

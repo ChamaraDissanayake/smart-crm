@@ -6,20 +6,21 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AuthService } from '@/services/AuthService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CompanyInfoForm } from '../CompanyInfoForm';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const pageMeta = [
-    { path: 'home', title: 'Home', icon: '/icon-home.png' },
-    { path: 'contacts', title: 'Contacts', icon: '/icon-contact.png' },
-    { path: 'communication', title: 'Conversations', icon: '/icon-communication.png' },
-    { path: 'crm', title: 'CRM', icon: '/icon-crm.png' },
-    { path: 'sales-products', title: 'Sales', icon: '/icon-sales.png' },
-    { path: 'sales-quotation', title: 'Sales', icon: '/icon-sales.png' },
-    { path: 'sales-invoicing', title: 'Sales', icon: '/icon-sales.png' },
-    { path: 'settings-account', title: 'Settings', icon: '/icon-settings.png' },
-    { path: 'settings-team', title: 'Settings', icon: '/icon-settings.png' },
-    { path: 'settings-api', title: 'Settings', icon: '/icon-settings.png' },
-];
+// const pageMeta = [
+//     { path: 'home', title: 'Home', icon: '/icon-home.png' },
+//     { path: 'contacts', title: 'Contacts', icon: '/icon-contact.png' },
+//     { path: 'communication', title: 'Communication', icon: '/icon-communication.png' },
+//     { path: 'follow-ups', title: 'Follow-Ups', icon: '/icon-communication.png' },
+//     { path: 'crm', title: 'CRM', icon: '/icon-crm.png' },
+//     { path: 'sales-products', title: 'Sales', icon: '/icon-sales.png' },
+//     { path: 'sales-quotation', title: 'Sales', icon: '/icon-sales.png' },
+//     { path: 'sales-invoicing', title: 'Sales', icon: '/icon-sales.png' },
+//     { path: 'settings-account', title: 'Settings', icon: '/icon-settings.png' },
+//     { path: 'settings-team', title: 'Settings', icon: '/icon-settings.png' },
+//     { path: 'settings-api', title: 'Settings', icon: '/icon-settings.png' },
+// ];
 
 export const Navbar = () => {
     const [userCompanies, setUserCompanies] = useState<CompanyDropdownOption[]>([]);
@@ -118,18 +119,20 @@ export const Navbar = () => {
         }
     }, [selectedCompanyId]);
 
-    const location = useLocation();
-    const currentMeta = pageMeta.find(meta => location.pathname.includes(meta.path));
-    const pageTitle = currentMeta?.title || 'Dashboard';
-    const pageIcon = currentMeta?.icon || '/icon-default.png';
+    // const location = useLocation();
+    // const currentMeta = pageMeta.find(meta => location.pathname.includes(meta.path));
+    // const pageTitle = currentMeta?.title || 'Dashboard';
+    // const pageIcon = currentMeta?.icon || '/icon-default.png';
 
     return (
         <>
-            <nav className="flex items-center justify-between px-4 py-2 bg-[#E1DBF3]">
+            {/* <nav className="flex items-center justify-between px-4 py-2 bg-white"> */}
+            <nav className="z-50 flex items-center justify-between px-4 py-2 bg-white shadow-md drop-shadow-sm">
+
                 {/* Left side - Tabs */}
                 <div className="flex gap-4">
-                    <img className="h-10" src={pageIcon} />
-                    <h1 className="content-center text-3xl font-bold">{pageTitle}</h1>
+                    {/* <img className="h-10" src={pageIcon} />
+                    <h1 className="content-center text-3xl font-bold">{pageTitle}</h1> */}
                 </div>
 
                 {/* Right side - Company dropdown and user menu */}
