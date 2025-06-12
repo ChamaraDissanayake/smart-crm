@@ -4,12 +4,7 @@ import {
     Home,
     PhoneCall,
     MessageSquare,
-    //   ChevronsUp,
     UserRoundPlus,
-    //   BarChart3,
-    //   Brain,
-    //   LayoutGrid,
-    //   LineChart,
     Settings,
     ChevronDown,
     ChevronRight,
@@ -29,11 +24,11 @@ export const Sidebar = () => {
     const isActive = (path: string) => location.pathname === path;
 
     const menuItemClass = (path: string) =>
-        `flex items-center p-2 space-x-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : ""
+        `flex items-center p-2 space-x-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : "font-light"
         }`;
 
     const subItemClass = (path: string) =>
-        `block p-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : ""
+        `block p-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : "font-light"
         }`;
 
     const handleTopLevelClick = () => setOpenMenu(null);
@@ -68,7 +63,7 @@ export const Sidebar = () => {
 
             {/* Scrollable content */}
             <div className="pr-1 mt-4">
-                <ul className="space-y-2 font-medium">
+                <ul className="space-y-2">
                     {/* Top-level items */}
                     <li>
                         <Link

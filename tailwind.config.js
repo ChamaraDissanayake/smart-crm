@@ -11,6 +11,12 @@ export default {
 	],
 	theme: {
 		extend: {
+			fontFamily: {
+				sans: ['InterVariable', 'Helvetica', 'Arial', 'sans-serif'],
+			},
+			fontSize: {
+				base: '15px',
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
