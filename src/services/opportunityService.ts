@@ -76,7 +76,6 @@ export const OpportunityService = {
             });
             return data.customerCount || 0;
         } catch (error) {
-            toast.error('Failed to fetch contacts');
             console.error('Error fetching contacts:', error);
             return 0;
         }

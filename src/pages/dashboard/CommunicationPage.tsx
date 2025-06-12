@@ -575,15 +575,18 @@ const CommunicationPage = () => {
 
 
                         {/* Messages */}
-                        <ScrollArea className="flex-1 px-4 space-y-3">
+                        {/* <ScrollArea className="flex-1 px-4 space-y-3 bg-green-300"> */}
+                        {/* <ScrollArea className="flex-1 px-4 space-y-3 bg-[url('/chat-background.png')] bg-cover bg-center [background-opacity:0.1]"> */}
+                        <ScrollArea className="relative flex-1 px-4 space-y-3 bg-[url('/chat-background.jpg')] bg-cover bg-center">
+
                             {messages.map((message) => (
                                 <div
                                     key={message.id}
                                     className={cn(
                                         'max-w-[80%] px-3 py-2 relative mt-4 w-fit',
                                         message.role === 'user'
-                                            ? 'bg-[#E9E7F9] text-[#5A47A4] self-start mr-auto rounded-lg rounded-tl-none'
-                                            : 'bg-[#5A47A4] text-white self-end ml-auto rounded-lg rounded-tr-none',
+                                            ? 'bg-gray-50 text-blue-950 self-start mr-auto rounded-lg rounded-tl-none drop-shadow-md'
+                                            : 'bg-blue-900 text-white self-end ml-auto rounded-lg rounded-tr-none drop-shadow-md',
                                         message.status === 'failed' && 'opacity-70'
                                     )}
                                 >
