@@ -111,14 +111,6 @@ export default function HomePage() {
         window.requestAnimationFrame(step);
     };
 
-    useEffect(() => {
-        const fetchCount = async () => {
-            const contactCount = await OpportunityService.getCompanyContactCount();
-            console.log(`Total contacts: ${contactCount}`);
-        }
-        fetchCount();
-    }, []);
-
     const handleCardClick = (path: string) => {
         navigate(path);
     };
