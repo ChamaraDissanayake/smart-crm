@@ -3,6 +3,7 @@ import axios from "axios";
 import socket from "./helpers/socket";
 import api from './Api';
 import { ChatHead, Message } from "@/types/Communication";
+import { CompanyService } from "./CompanyService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,6 +54,8 @@ const ChatService = {
         // Remove existing listener for this thread to avoid duplicates
         const existingListener = activeThreadListeners.get(threadId);
         if (existingListener) {
+            console.log(`Removing existing listener for thread ${threadId}`);
+
             socket.off("new-message", existingListener);
             activeThreadListeners.delete(threadId);
         }
@@ -102,7 +105,7 @@ const ChatService = {
     // Use this to send Whatsapp messages only
     sendWhatsAppMessage: async (to: string, message: string) => {
         try {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             const response = await axios.post(`${CHAT_BASE_URL}/whatsapp/send`, {
                 to,
                 message,

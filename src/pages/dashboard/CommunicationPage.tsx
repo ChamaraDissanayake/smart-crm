@@ -1,34 +1,23 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { FaWhatsapp, FaRobot, FaPaperPlane, FaGlobe } from 'react-icons/fa';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import ChatService from '@/services/ChatService';
 import { toast } from 'react-toastify';
-import { ChatHead, Message } from '@/types/Communication';
+import { ChatHead, ContactHeader, Message } from '@/types/Communication';
 import { FaTimes } from 'react-icons/fa';
 import { UserService } from '@/services/UserService';
 import { User } from '@/types/User';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ChevronsUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-
-interface ContactHeader {
-    id: string;
-    name: string;
-    phone: string;
-    channel: string;
-    lastMessage: string;
-    lastMessageRole?: 'user' | 'assistant';
-    currentHandler: 'bot' | 'agent';
-    assignee: string;
-    createdAt: string;
-    time?: string;
-}
+import { formatAndSortChatHeads } from '@/utils/chat';
+import { CompanyService } from '@/services/CompanyService';
 
 const CommunicationPage = () => {
     const [selectedChannel, setSelectedChannel] = useState('all');
     const [contacts, setContacts] = useState<ContactHeader[]>([]);
+    const [filteredContacts, setFilteredContacts] = useState<ContactHeader[]>([]);
     const [selectedContact, setSelectedContact] = useState<ContactHeader | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -40,40 +29,27 @@ const CommunicationPage = () => {
     const [isFollowUp, setIsFollowUp] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const channelChangeHandler = (channel: string) => {
+        setSelectedChannel(channel);
+    };
+
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
         console.log('Chamara fetching chat heads');
 
-        const companyId = localStorage.getItem('selectedCompany');
+        const companyId = await CompanyService.getCompanyId();
         if (!companyId) {
             toast.error('Company ID not found');
             return;
         }
 
         try {
-            const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
-            const formattedContacts: ContactHeader[] = chatHeads.map((head) => ({
-                id: head.id,
-                name: head.customer.name || head.customer.phone,
-                phone: head.customer.phone,
-                lastMessage: head.lastMessage?.content || '',
-                lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined,
-                channel: head.channel,
-                currentHandler: head.currentHandler,
-                assignee: head.assignee,
-                time: head.lastMessage?.createdAt,
-                createdAt: head.lastMessage?.createdAt
-                    ? formatTime(head.lastMessage.createdAt)
-                    : '',
-            }));
-
-            formattedContacts.sort((a, b) => {
-                const timeA = a.time ? new Date(a.time).getTime() : 0;
-                const timeB = b.time ? new Date(b.time).getTime() : 0;
-                return timeB - timeA;
-            });
-
-            setContacts(formattedContacts);
+            let formattedContacts = contacts;
+            if (formattedContacts.length === 0) {
+                const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
+                formattedContacts = formatAndSortChatHeads(chatHeads);
+                setContacts(formattedContacts);
+            }
 
             // Update selected contact
             if (selectedContact) {
@@ -82,7 +58,7 @@ const CommunicationPage = () => {
                     setSelectedContact(null);
                     setMessages([]);
                 }
-            } else if (formattedContacts.length > 0) {
+            } else if (!selectedContact && formattedContacts.length > 0) {
                 setSelectedContact(formattedContacts[0]);
             }
 
@@ -125,7 +101,7 @@ const CommunicationPage = () => {
             console.error(error);
             toast.error('Failed to load contacts');
         }
-    }, [selectedChannel, selectedContact]);
+    }, [contacts, selectedChannel, selectedContact]);
 
     useEffect(() => {
         fetchChatHeads();
@@ -174,157 +150,163 @@ const CommunicationPage = () => {
 
     // Socket connection for real-time updates
     useEffect(() => {
-        const companyId = localStorage.getItem('selectedCompany');
-        if (!companyId) return;
+        async function messageHandle() {
+            const companyId = await CompanyService.getCompanyId();
+            if (!companyId) return;
 
-        // Subscribe to company chat events
-        ChatService.subscribeToChatSocketEvents(companyId);
-
-        const handleNewMessage = (message: Message) => {
-            // Update contacts list with new message and move to top
-            setContacts(prev => {
-                const contactIndex = prev.findIndex(c => c.id === message.threadId);
-                if (contactIndex === -1) {
-                    // If this is a new thread, refresh the list
-                    fetchChatHeads();
-                    return prev;
-                }
-
-                const updatedContacts = [...prev];
-                const contact = updatedContacts[contactIndex];
-
-                // Update the contact with new message info
-                const updatedContact = {
-                    ...contact,
-                    lastMessage: message.content,
-                    lastMessageRole: message.role,
-                    createdAt: formatTime(message.createdAt)
-                };
-
-                // Remove from current position and add to top
-                updatedContacts.splice(contactIndex, 1);
-                updatedContacts.unshift(updatedContact);
-
-                return updatedContacts;
-            });
-
-            // Mark as unread if not the current chat
-            if (selectedContact?.id !== message.threadId) {
-                setUnreadThreads(prev => new Set(prev).add(message.threadId));
-            }
-        };
-
-        const handleNewThread = (thread: ChatHead & { companyId: string }) => {
-            console.log('Chamara thread:', thread, companyId, selectedChannel);
-
-            if (thread.companyId !== companyId) return;
-
-            setContacts(prev => {
-                // Check if the thread already exists
-                const alreadyExists = prev.some(c => c.id === thread.id);
-                if (alreadyExists) return prev;
-
-                const formattedContact: ContactHeader = {
-                    id: thread.id,
-                    name: thread.customer.name || thread.customer.phone,
-                    phone: thread.customer.phone,
-                    lastMessage: thread.lastMessage?.content || '',
-                    lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
-                    channel: thread.channel,
-                    currentHandler: thread.currentHandler,
-                    assignee: thread.assignee,
-                    time: thread.lastMessage?.createdAt,
-                    createdAt: thread.lastMessage?.createdAt
-                        ? formatTime(thread.lastMessage.createdAt)
-                        : '',
-                };
-
-                const updatedContacts = [formattedContact, ...prev];
-
-                // Sort by latest message time
-                updatedContacts.sort((a, b) => {
-                    const timeA = a.time ? new Date(a.time).getTime() : 0;
-                    const timeB = b.time ? new Date(b.time).getTime() : 0;
-                    return timeB - timeA;
-                });
-
-                return updatedContacts;
-            });
-
-            // Auto-select if nothing is selected
-            setSelectedContact(prev => {
-                if (prev) return prev;
-                return {
-                    id: thread.id,
-                    name: thread.customer.name || thread.customer.phone,
-                    phone: thread.customer.phone,
-                    lastMessage: thread.lastMessage?.content || '',
-                    lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
-                    channel: thread.channel,
-                    currentHandler: thread.currentHandler,
-                    assignee: thread.assignee,
-                    time: thread.lastMessage?.createdAt,
-                    createdAt: thread.lastMessage?.createdAt
-                        ? formatTime(thread.lastMessage.createdAt)
-                        : '',
-                };
-            });
-
-            // ✅ Join the new thread socket room to receive messages in real-time
-            ChatService.joinThread(thread.id, (message: Message) => {
-                setContacts(prev =>
-                    prev.map(c =>
-                        c.id === message.threadId
-                            ? {
-                                ...c,
-                                lastMessage: message.content,
-                                lastMessageRole: message.role as 'user' | 'assistant',
-                                createdAt: formatTime(message.createdAt),
-                                time: message.createdAt
-                            }
-                            : c
-                    )
-                );
-
-                if (selectedContact?.id === message.threadId) {
-                    setMessages(prev => {
-                        const alreadyExists = prev.some((msg) => msg.id === message.id);
-                        if (alreadyExists) return prev;
-
-                        return [...prev, {
-                            ...message,
-                            createdAt: formatTime(message.createdAt)
-                        }];
-                    });
-                }
-            });
-        };
-
-
-        // Setup message and thread listeners
-        const cleanupMessageListener = ChatService.onNewMessage(handleNewMessage);
-        const cleanupThreadListener = ChatService.onNewThread(handleNewThread);
-
-        return () => {
-            cleanupMessageListener();
-            cleanupThreadListener();
-        };
-    }, [selectedChannel, selectedContact, fetchChatHeads, contacts]);
-
-    useEffect(() => {
-        const companyId = localStorage.getItem('selectedCompany');
-        if (companyId) {
+            // Subscribe to company chat events
             ChatService.subscribeToChatSocketEvents(companyId);
 
+            const handleNewMessage = (message: Message) => {
+                // Update contacts list with new message and move to top
+                setContacts(prev => {
+                    const contactIndex = prev.findIndex(c => c.id === message.threadId);
+                    if (contactIndex === -1) {
+                        // If this is a new thread, refresh the list
+                        fetchChatHeads();
+                        return prev;
+                    }
+
+                    const updatedContacts = [...prev];
+                    const contact = updatedContacts[contactIndex];
+
+                    // Update the contact with new message info
+                    const updatedContact = {
+                        ...contact,
+                        lastMessage: message.content,
+                        lastMessageRole: message.role,
+                        createdAt: formatTime(message.createdAt)
+                    };
+
+                    // Remove from current position and add to top
+                    updatedContacts.splice(contactIndex, 1);
+                    updatedContacts.unshift(updatedContact);
+
+                    return updatedContacts;
+                });
+
+                // Mark as unread if not the current chat
+                if (selectedContact?.id !== message.threadId) {
+                    setUnreadThreads(prev => new Set(prev).add(message.threadId));
+                }
+            };
+
+            const handleNewThread = (thread: ChatHead & { companyId: string }) => {
+                console.log('Chamara thread:', thread, companyId, selectedChannel);
+
+                if (thread.companyId !== companyId) return;
+
+                setContacts(prev => {
+                    // Check if the thread already exists
+                    const alreadyExists = prev.some(c => c.id === thread.id);
+                    if (alreadyExists) return prev;
+
+                    const formattedContact: ContactHeader = {
+                        id: thread.id,
+                        name: thread.customer.name || thread.customer.phone,
+                        phone: thread.customer.phone,
+                        lastMessage: thread.lastMessage?.content || '',
+                        lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
+                        channel: thread.channel,
+                        currentHandler: thread.currentHandler,
+                        assignee: thread.assignee,
+                        time: thread.lastMessage?.createdAt,
+                        createdAt: thread.lastMessage?.createdAt
+                            ? formatTime(thread.lastMessage.createdAt)
+                            : '',
+                    };
+
+                    const updatedContacts = [formattedContact, ...prev];
+
+                    // Sort by latest message time
+                    updatedContacts.sort((a, b) => {
+                        const timeA = a.time ? new Date(a.time).getTime() : 0;
+                        const timeB = b.time ? new Date(b.time).getTime() : 0;
+                        return timeB - timeA;
+                    });
+
+                    return updatedContacts;
+                });
+
+                // Auto-select if nothing is selected
+                setSelectedContact(prev => {
+                    if (prev) return prev;
+                    return {
+                        id: thread.id,
+                        name: thread.customer.name || thread.customer.phone,
+                        phone: thread.customer.phone,
+                        lastMessage: thread.lastMessage?.content || '',
+                        lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
+                        channel: thread.channel,
+                        currentHandler: thread.currentHandler,
+                        assignee: thread.assignee,
+                        time: thread.lastMessage?.createdAt,
+                        createdAt: thread.lastMessage?.createdAt
+                            ? formatTime(thread.lastMessage.createdAt)
+                            : '',
+                    };
+                });
+
+                // ✅ Join the new thread socket room to receive messages in real-time
+                ChatService.joinThread(thread.id, (message: Message) => {
+                    setContacts(prev =>
+                        prev.map(c =>
+                            c.id === message.threadId
+                                ? {
+                                    ...c,
+                                    lastMessage: message.content,
+                                    lastMessageRole: message.role as 'user' | 'assistant',
+                                    createdAt: formatTime(message.createdAt),
+                                    time: message.createdAt
+                                }
+                                : c
+                        )
+                    );
+
+                    if (selectedContact?.id === message.threadId) {
+                        setMessages(prev => {
+                            const alreadyExists = prev.some((msg) => msg.id === message.id);
+                            if (alreadyExists) return prev;
+
+                            return [...prev, {
+                                ...message,
+                                createdAt: formatTime(message.createdAt)
+                            }];
+                        });
+                    }
+                });
+            };
+
+
+            // Setup message and thread listeners
+            const cleanupMessageListener = ChatService.onNewMessage(handleNewMessage);
+            const cleanupThreadListener = ChatService.onNewThread(handleNewThread);
+
             return () => {
-                ChatService.cleanupAllListeners();
+                cleanupMessageListener();
+                cleanupThreadListener();
             };
         }
+        messageHandle();
+    }, [selectedChannel, selectedContact, fetchChatHeads, contacts, filteredContacts]);
+
+    useEffect(() => {
+        async function initializeSocket() {
+            const companyId = await CompanyService.getCompanyId();
+            if (companyId) {
+                ChatService.subscribeToChatSocketEvents(companyId);
+
+                return () => {
+                    ChatService.cleanupAllListeners();
+                };
+            }
+        }
+        initializeSocket();
     }, []);
 
     useEffect(() => {
         const getCompanyUsers = async () => {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             if (companyId) {
                 const users = await UserService.getUsers(companyId);
                 setUsers(users);
@@ -362,9 +344,9 @@ const CommunicationPage = () => {
         setSelectedContact(contact);
     };
 
-    const renderContacts = () => {
-        const filteredContacts = contacts
-            // .filter(contact => contact.lastMessage) // Only show contacts with messages
+    useEffect(() => {
+        const filtered = contacts
+            .filter(contact => selectedChannel === 'all' || contact.channel === selectedChannel)
             .filter(contact => {
                 if (!searchQuery) return true;
                 const query = searchQuery.toLowerCase();
@@ -374,6 +356,19 @@ const CommunicationPage = () => {
                 );
             });
 
+        setFilteredContacts(filtered);
+
+        if (filtered.length > 0) {
+            const existsInFiltered = selectedContact && filtered.some(c => c.id === selectedContact.id);
+            if (!existsInFiltered) {
+                setSelectedContact(filtered[0]); // Set first one if current is not in filtered
+            }
+        } else {
+            setSelectedContact(null); // Optional: Clear selection if no match
+        }
+    }, [contacts, selectedChannel, searchQuery, selectedContact]);
+
+    const renderContacts = () => {
         if (filteredContacts.length === 0) {
             return <p className="mt-10 text-center text-gray-500">No contacts found.</p>;
         }
@@ -398,12 +393,10 @@ const CommunicationPage = () => {
 
                 {/* Chat Info */}
                 <div className="flex-1 overflow-hidden">
-                    {/* Top Row: Name + Time */}
                     <div className="flex items-center justify-between">
                         <div className="font-medium truncate">{contact.name || 'Unknown'}</div>
                         <div className="pl-2 text-xs text-gray-500 whitespace-nowrap">{contact.createdAt}</div>
                     </div>
-                    {/* Bottom Row: Last Message */}
                     <div className="text-xs truncate text-muted-foreground">
                         {contact.lastMessage}
                     </div>
@@ -411,6 +404,7 @@ const CommunicationPage = () => {
             </div>
         ));
     };
+
 
     const handleMarkAsDone = async () => {
         if (!selectedContact?.id) {
@@ -507,7 +501,23 @@ const CommunicationPage = () => {
         }
     };
 
+    const unreadCounts = useMemo(() => {
+        const counts = {
+            all: 0,
+            whatsapp: 0,
+            web: 0
+        };
 
+        for (const contact of contacts) {
+            if (unreadThreads.has(contact.id)) {
+                counts.all++;
+                if (contact.channel === 'whatsapp') counts.whatsapp++;
+                if (contact.channel === 'web') counts.web++;
+            }
+        }
+
+        return counts;
+    }, [contacts, unreadThreads]);
 
 
     return (
@@ -521,10 +531,18 @@ const CommunicationPage = () => {
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'all' && 'bg-blue-100 text-blue-600'
                         )}
-                        onClick={() => setSelectedChannel('all')}
+                        onClick={() => channelChangeHandler('all')}
                         title="All Channels"
                     >
-                        <FaGlobe className="text-xl text-blue-500" />
+                        <div className="relative">
+                            <FaGlobe className="text-xl text-blue-500" />
+                            {unreadCounts.all > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] leading-4 text-white bg-red-500 rounded-full flex items-center justify-center border border-white">
+                                    {unreadCounts.all}
+                                </span>
+                            )}
+                        </div>
+
                         <span className="hidden md:inline">All</span>
                     </button>
                     <button
@@ -532,21 +550,37 @@ const CommunicationPage = () => {
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'whatsapp' && 'bg-green-100 text-green-600'
                         )}
-                        onClick={() => setSelectedChannel('whatsapp')}
+                        onClick={() => channelChangeHandler('whatsapp')}
                         title="WhatsApp"
                     >
-                        <FaWhatsapp className="text-xl text-green-500" />
+                        <div className="relative">
+                            <FaWhatsapp className="text-xl text-green-500" />
+                            {unreadCounts.whatsapp > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] leading-4 text-white bg-red-500 rounded-full flex items-center justify-center border border-white">
+                                    {unreadCounts.whatsapp}
+                                </span>
+                            )}
+                        </div>
                         <span className="hidden md:inline">WhatsApp</span>
                     </button>
+
                     <button
                         className={cn(
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'web' && 'bg-purple-100 text-purple-600'
                         )}
-                        onClick={() => setSelectedChannel('web')}
+                        onClick={() => channelChangeHandler('web')}
                         title="ChatBot"
                     >
-                        <FaRobot className="text-xl text-purple-500" />
+
+                        <div className="relative">
+                            <FaRobot className="text-xl text-purple-500" />
+                            {unreadCounts.web > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] leading-4 text-white bg-red-500 rounded-full flex items-center justify-center border border-white">
+                                    {unreadCounts.web}
+                                </span>
+                            )}
+                        </div>
                         <span className="hidden md:inline">ChatBot</span>
                     </button>
                 </div>
@@ -656,7 +690,6 @@ const CommunicationPage = () => {
 
                         {/* Messages */}
                         <ScrollArea className="relative flex-1 px-4 space-y-3 bg-[url('/chat-background.jpg')] bg-cover bg-center">
-
                             {messages.map((message) => (
                                 <div
                                     key={message.id}

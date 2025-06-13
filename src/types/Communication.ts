@@ -11,7 +11,7 @@ export interface Contact {
 }
 export interface ChatHead {
     id: string;
-    channel: string;
+    channel: 'web' | 'whatsapp' | 'all';
     customer: Customer;
     currentHandler: 'bot' | 'agent';
     assignee: string;
@@ -29,4 +29,17 @@ export interface Message {
     content: string;
     createdAt: string;
     status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+}
+
+export interface ContactHeader {
+    id: string;
+    name: string;
+    phone: string;
+    channel: 'web' | 'whatsapp' | 'all';
+    lastMessage: string;
+    lastMessageRole?: 'user' | 'assistant';
+    currentHandler: 'bot' | 'agent';
+    assignee: string;
+    createdAt: string;
+    time?: string;
 }
