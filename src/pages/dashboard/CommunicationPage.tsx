@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import ChatService from '@/services/ChatService';
 import { toast } from 'react-toastify';
-import { ChatHead, Message } from '@/types/Chat';
+import { ChatHead, Message } from '@/types/Communication';
 import { FaTimes } from 'react-icons/fa';
 import { UserService } from '@/services/UserService';
 import { User } from '@/types/User';
@@ -13,7 +13,7 @@ import { ChevronsUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
-interface Contact {
+interface ContactHeader {
     id: string;
     name: string;
     phone: string;
@@ -28,8 +28,8 @@ interface Contact {
 
 const CommunicationPage = () => {
     const [selectedChannel, setSelectedChannel] = useState('all');
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+    const [contacts, setContacts] = useState<ContactHeader[]>([]);
+    const [selectedContact, setSelectedContact] = useState<ContactHeader | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -42,6 +42,8 @@ const CommunicationPage = () => {
 
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
+        console.log('Chamara fetching chat heads');
+
         const companyId = localStorage.getItem('selectedCompany');
         if (!companyId) {
             toast.error('Company ID not found');
@@ -50,7 +52,7 @@ const CommunicationPage = () => {
 
         try {
             const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
-            const formattedContacts: Contact[] = chatHeads.map((head) => ({
+            const formattedContacts: ContactHeader[] = chatHeads.map((head) => ({
                 id: head.id,
                 name: head.customer.name || head.customer.phone,
                 phone: head.customer.phone,
@@ -210,16 +212,94 @@ const CommunicationPage = () => {
             if (selectedContact?.id !== message.threadId) {
                 setUnreadThreads(prev => new Set(prev).add(message.threadId));
             }
-
-            console.log('Chamara selected:', selectedChannel, message, contacts);
-
         };
 
-        const handleNewThread = (thread: { id: string; companyId: string }) => {
-            if (thread.companyId === companyId) {
-                fetchChatHeads();
-            }
+        const handleNewThread = (thread: ChatHead & { companyId: string }) => {
+            console.log('Chamara thread:', thread, companyId, selectedChannel);
+
+            if (thread.companyId !== companyId) return;
+
+            setContacts(prev => {
+                // Check if the thread already exists
+                const alreadyExists = prev.some(c => c.id === thread.id);
+                if (alreadyExists) return prev;
+
+                const formattedContact: ContactHeader = {
+                    id: thread.id,
+                    name: thread.customer.name || thread.customer.phone,
+                    phone: thread.customer.phone,
+                    lastMessage: thread.lastMessage?.content || '',
+                    lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
+                    channel: thread.channel,
+                    currentHandler: thread.currentHandler,
+                    assignee: thread.assignee,
+                    time: thread.lastMessage?.createdAt,
+                    createdAt: thread.lastMessage?.createdAt
+                        ? formatTime(thread.lastMessage.createdAt)
+                        : '',
+                };
+
+                const updatedContacts = [formattedContact, ...prev];
+
+                // Sort by latest message time
+                updatedContacts.sort((a, b) => {
+                    const timeA = a.time ? new Date(a.time).getTime() : 0;
+                    const timeB = b.time ? new Date(b.time).getTime() : 0;
+                    return timeB - timeA;
+                });
+
+                return updatedContacts;
+            });
+
+            // Auto-select if nothing is selected
+            setSelectedContact(prev => {
+                if (prev) return prev;
+                return {
+                    id: thread.id,
+                    name: thread.customer.name || thread.customer.phone,
+                    phone: thread.customer.phone,
+                    lastMessage: thread.lastMessage?.content || '',
+                    lastMessageRole: thread.lastMessage?.role as 'user' | 'assistant' | undefined,
+                    channel: thread.channel,
+                    currentHandler: thread.currentHandler,
+                    assignee: thread.assignee,
+                    time: thread.lastMessage?.createdAt,
+                    createdAt: thread.lastMessage?.createdAt
+                        ? formatTime(thread.lastMessage.createdAt)
+                        : '',
+                };
+            });
+
+            // ✅ Join the new thread socket room to receive messages in real-time
+            ChatService.joinThread(thread.id, (message: Message) => {
+                setContacts(prev =>
+                    prev.map(c =>
+                        c.id === message.threadId
+                            ? {
+                                ...c,
+                                lastMessage: message.content,
+                                lastMessageRole: message.role as 'user' | 'assistant',
+                                createdAt: formatTime(message.createdAt),
+                                time: message.createdAt
+                            }
+                            : c
+                    )
+                );
+
+                if (selectedContact?.id === message.threadId) {
+                    setMessages(prev => {
+                        const alreadyExists = prev.some((msg) => msg.id === message.id);
+                        if (alreadyExists) return prev;
+
+                        return [...prev, {
+                            ...message,
+                            createdAt: formatTime(message.createdAt)
+                        }];
+                    });
+                }
+            });
         };
+
 
         // Setup message and thread listeners
         const cleanupMessageListener = ChatService.onNewMessage(handleNewMessage);
@@ -273,7 +353,7 @@ const CommunicationPage = () => {
         }
     };
 
-    const handleSelectContact = (contact: Contact) => {
+    const handleSelectContact = (contact: ContactHeader) => {
         setUnreadThreads(prev => {
             const newSet = new Set(prev);
             newSet.delete(contact.id);
@@ -575,8 +655,6 @@ const CommunicationPage = () => {
 
 
                         {/* Messages */}
-                        {/* <ScrollArea className="flex-1 px-4 space-y-3 bg-green-300"> */}
-                        {/* <ScrollArea className="flex-1 px-4 space-y-3 bg-[url('/chat-background.png')] bg-cover bg-center [background-opacity:0.1]"> */}
                         <ScrollArea className="relative flex-1 px-4 space-y-3 bg-[url('/chat-background.jpg')] bg-cover bg-center">
 
                             {messages.map((message) => (

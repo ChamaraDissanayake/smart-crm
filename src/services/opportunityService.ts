@@ -1,7 +1,7 @@
 import { generateLeads } from "./helpers/generateLeads";
 import { toast } from 'react-toastify';
 import api from './Api';
-import { Contact } from "@/types/Contact";
+import { Contact } from "@/types/Communication";
 
 export interface Lead {
     id: number;

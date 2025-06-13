@@ -117,14 +117,6 @@ export const Sidebar = () => {
                             <ul className="pl-8 mt-1 space-y-1">
                                 <li>
                                     <Link
-                                        to="/dashboard/communication/my-conversations"
-                                        className={subItemClass("/dashboard/communication/my-conversations")}
-                                    >
-                                        My Conversation
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
                                         to="/dashboard/follow-ups"
                                         className={subItemClass("/dashboard/follow-ups")}
                                     >

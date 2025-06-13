@@ -1,5 +1,14 @@
 import { Customer } from "./Customer";
 
+export interface Contact {
+    id: string;
+    name: string;
+    email?: string;
+    code?: string;
+    phone?: string;
+    location?: string;
+    isCompany?: boolean;
+}
 export interface ChatHead {
     id: string;
     channel: string;

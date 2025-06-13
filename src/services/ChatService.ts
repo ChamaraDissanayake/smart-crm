@@ -2,7 +2,7 @@
 import axios from "axios";
 import socket from "./helpers/socket";
 import api from './Api';
-import { Message } from "@/types/Chat";
+import { ChatHead, Message } from "@/types/Communication";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -44,6 +44,7 @@ const ChatService = {
     },
 
     joinThread: (threadId: string, onMessage: (msg: Message) => void) => {
+        console.log('Chamara joining thread service:', threadId);
 
         if (!socket.connected) {
             socket.connect();
@@ -81,7 +82,16 @@ const ChatService = {
         };
     },
 
-    onNewThread: (callback: (thread: { id: string; companyId: string }) => void) => {
+    // onNewThread: (callback: (thread: { id: string; companyId: string }) => void) => {
+    //     socket.on("new-thread", callback);
+
+    //     return () => {
+    //         socket.off("new-thread", callback);
+    //     };
+    // },
+
+
+    onNewThread: (callback: (thread: ChatHead & { companyId: string }) => void) => {
         socket.on("new-thread", callback);
 
         return () => {
