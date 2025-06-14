@@ -51,8 +51,6 @@ export const CompanyService = {
         for (let i = 0; i < 3; i++) {
             const companyId = localStorage.getItem('selectedCompany');
             if (companyId) {
-                console.log('Company ID found:', companyId, 'in localStorage from attempt: ', i);
-
                 return companyId;
             }
             // Wait 500ms before retrying

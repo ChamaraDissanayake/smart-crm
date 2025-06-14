@@ -45,7 +45,6 @@ const ChatService = {
     },
 
     joinThread: (threadId: string, onMessage: (msg: Message) => void) => {
-        console.log('Chamara joining thread service:', threadId);
 
         if (!socket.connected) {
             socket.connect();
@@ -54,8 +53,6 @@ const ChatService = {
         // Remove existing listener for this thread to avoid duplicates
         const existingListener = activeThreadListeners.get(threadId);
         if (existingListener) {
-            console.log(`Removing existing listener for thread ${threadId}`);
-
             socket.off("new-message", existingListener);
             activeThreadListeners.delete(threadId);
         }

@@ -35,8 +35,6 @@ const CommunicationPage = () => {
 
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
-        console.log('Chamara fetching chat heads');
-
         const companyId = await CompanyService.getCompanyId();
         if (!companyId) {
             toast.error('Company ID not found');
@@ -103,9 +101,16 @@ const CommunicationPage = () => {
         }
     }, [contacts, selectedChannel, selectedContact]);
 
+    // useEffect(() => {
+    //     fetchChatHeads();
+    // }, [fetchChatHeads]);
     useEffect(() => {
-        fetchChatHeads();
-    }, [fetchChatHeads]);
+        if (filteredContacts.length === 0 && contacts.length > 0 && selectedContact === null) {
+            console.log('Do not reload');
+        } else {
+            fetchChatHeads();
+        }
+    }, [filteredContacts, contacts, selectedContact, fetchChatHeads]);
 
     // Fetch chat history when selected contact changes
     useEffect(() => {
@@ -187,13 +192,13 @@ const CommunicationPage = () => {
 
                 // Mark as unread if not the current chat
                 if (selectedContact?.id !== message.threadId) {
+                    console.log('Chamara setting unread', selectedContact, message);
+
                     setUnreadThreads(prev => new Set(prev).add(message.threadId));
                 }
             };
 
             const handleNewThread = (thread: ChatHead & { companyId: string }) => {
-                console.log('Chamara thread:', thread, companyId, selectedChannel);
-
                 if (thread.companyId !== companyId) return;
 
                 setContacts(prev => {
@@ -344,12 +349,26 @@ const CommunicationPage = () => {
         setSelectedContact(contact);
     };
 
+    const selectedContactRef = useRef<ContactHeader | null>(null);
+    useEffect(() => {
+        selectedContactRef.current = selectedContact;
+    }, [selectedContact]);
+
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
     useEffect(() => {
         const filtered = contacts
             .filter(contact => selectedChannel === 'all' || contact.channel === selectedChannel)
             .filter(contact => {
-                if (!searchQuery) return true;
-                const query = searchQuery.toLowerCase();
+                if (!debouncedSearchQuery) return true;
+                const query = debouncedSearchQuery.toLowerCase();
                 return (
                     contact.name.toLowerCase().includes(query) ||
                     contact.phone.toLowerCase().includes(query)
@@ -358,15 +377,25 @@ const CommunicationPage = () => {
 
         setFilteredContacts(filtered);
 
+        const existsInFiltered = filtered.some(c => c.id === selectedContactRef.current?.id);
+
+        if (!existsInFiltered) {
+            setSelectedContact(filtered[0] || null); // null if no match
+        }
+
         if (filtered.length > 0) {
-            const existsInFiltered = selectedContact && filtered.some(c => c.id === selectedContact.id);
             if (!existsInFiltered) {
-                setSelectedContact(filtered[0]); // Set first one if current is not in filtered
+                setSelectedContact(filtered[0]);
             }
         } else {
-            setSelectedContact(null); // Optional: Clear selection if no match
+            if (selectedContactRef.current !== null) {
+                console.log('Chamara setting null');
+
+                setSelectedContact(null);
+            }
         }
-    }, [contacts, selectedChannel, searchQuery, selectedContact]);
+    }, [contacts, selectedChannel, debouncedSearchQuery]);
+
 
     const renderContacts = () => {
         if (filteredContacts.length === 0) {
@@ -386,7 +415,7 @@ const CommunicationPage = () => {
                 {/* Avatar */}
                 <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
                     {contact.name?.charAt(0) || '?'}
-                    {unreadThreads.has(contact.id) && (
+                    {unreadThreads.has(contact.id) && selectedContact?.id !== contact.id && (
                         <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
                     )}
                 </div>
@@ -507,6 +536,7 @@ const CommunicationPage = () => {
             whatsapp: 0,
             web: 0
         };
+        console.log('Chamara unread threads', unreadThreads);
 
         for (const contact of contacts) {
             if (unreadThreads.has(contact.id)) {
@@ -620,9 +650,9 @@ const CommunicationPage = () => {
                             <div className="flex items-center gap-3">
                                 <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
                                     {selectedContact.name.charAt(0)}
-                                    {unreadThreads.has(selectedContact.id) && (
+                                    {/* {unreadThreads.has(selectedContact.id) && (
                                         <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
-                                    )}
+                                    )} */}
                                 </div>
                                 <div>
                                     <div className="font-semibold">{selectedContact.name}</div>
