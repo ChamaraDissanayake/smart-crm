@@ -82,15 +82,6 @@ const ChatService = {
         };
     },
 
-    // onNewThread: (callback: (thread: { id: string; companyId: string }) => void) => {
-    //     socket.on("new-thread", callback);
-
-    //     return () => {
-    //         socket.off("new-thread", callback);
-    //     };
-    // },
-
-
     onNewThread: (callback: (thread: ChatHead & { companyId: string }) => void) => {
         socket.on("new-thread", callback);
 

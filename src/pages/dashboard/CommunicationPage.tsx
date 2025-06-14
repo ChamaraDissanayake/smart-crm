@@ -11,7 +11,7 @@ import { User } from '@/types/User';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ChevronsUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatAndSortChatHeads } from '@/utils/chat';
+import { formatAndSortChatHeads, formatTime } from '@/utils/chat';
 import { CompanyService } from '@/services/CompanyService';
 
 const CommunicationPage = () => {
@@ -101,9 +101,6 @@ const CommunicationPage = () => {
         }
     }, [contacts, selectedChannel, selectedContact]);
 
-    // useEffect(() => {
-    //     fetchChatHeads();
-    // }, [fetchChatHeads]);
     useEffect(() => {
         if (filteredContacts.length === 0 && contacts.length > 0 && selectedContact === null) {
             console.log('Do not reload');
@@ -434,7 +431,6 @@ const CommunicationPage = () => {
         ));
     };
 
-
     const handleMarkAsDone = async () => {
         if (!selectedContact?.id) {
             toast.warn('No contact selected');
@@ -476,16 +472,6 @@ const CommunicationPage = () => {
         console.log('Follow up clicked');
         setIsFollowUp(prev => !prev);
     }
-
-    //Helper method to format date
-    const formatTime = (dateInput: string | number | Date): string => {
-        return new Date(dateInput).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
-
 
     // Update this when selectedContact changes
     useEffect(() => {
@@ -548,7 +534,6 @@ const CommunicationPage = () => {
 
         return counts;
     }, [contacts, unreadThreads]);
-
 
     return (
         <div className="flex h-full bg-gray-50">
@@ -650,9 +635,6 @@ const CommunicationPage = () => {
                             <div className="flex items-center gap-3">
                                 <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
                                     {selectedContact.name.charAt(0)}
-                                    {/* {unreadThreads.has(selectedContact.id) && (
-                                        <span className="absolute w-2.5 h-2.5 bg-red-500 rounded-full -top-0.5 -right-0.5 border border-white"></span>
-                                    )} */}
                                 </div>
                                 <div>
                                     <div className="font-semibold">{selectedContact.name}</div>
@@ -703,8 +685,6 @@ const CommunicationPage = () => {
 
                                 </div>
 
-
-
                                 {/* Mark as Done button */}
                                 <button
                                     onClick={handleMarkAsDone}
@@ -712,11 +692,8 @@ const CommunicationPage = () => {
                                 >
                                     Mark as Done
                                 </button>
-
-
                             </div>
                         </div>
-
 
                         {/* Messages */}
                         <ScrollArea className="relative flex-1 px-4 space-y-3 bg-[url('/chat-background.jpg')] bg-cover bg-center">
