@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { CompanyService } from '../../services/CompanyService';
 import { Company, CompanyDropdownOption } from '../../types/Company';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AuthService } from '@/services/AuthService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CompanyInfoForm } from '../CompanyInfoForm';
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 
 // const pageMeta = [
 //     { path: 'home', title: 'Home', icon: '/icon-home.png' },
@@ -127,63 +127,68 @@ export const Navbar = () => {
     return (
         <>
             {/* <nav className="flex items-center justify-between px-4 py-2 bg-white"> */}
-            <nav className="z-50 flex items-center justify-between px-4 py-2 bg-white shadow-md drop-shadow-sm">
+            <nav className="z-50 flex items-center px-4 py-2 bg-white shadow-md drop-shadow-sm">
+                {/* Left side (optional) */}
+                <div className="w-1/3"></div>
 
-                {/* Left side - Tabs */}
-                <div className="flex gap-4">
-                    {/* <img className="h-10" src={pageIcon} />
-                    <h1 className="content-center text-3xl font-bold">{pageTitle}</h1> */}
+                {/* Center - Company Name */}
+                <div className="flex justify-center flex-1">
+                    <div className="text-xl font-semibold text-gray-800">
+                        <h1 className="text-3xl font-bold text-blue-900" style={{ fontFamily: 'cursive' }}>
+                            {defaultCompanyRef.current?.name || ''}
+                        </h1>
+                    </div>
                 </div>
 
-                {/* Right side - Company dropdown and user menu */}
-                <div className="flex items-center gap-4">
-                    <div className="bg-white rounded-md w-60">
-                        <Select
-                            value={selectedCompanyId}
-                            onValueChange={async (newCompanyId) => {
-                                setSelectedCompanyId(newCompanyId);
-
-                                const selected = userCompanies.find(c => c.id === newCompanyId);
-                                if (selected) {
-                                    defaultCompanyRef.current = selected;
-
-                                    try {
-                                        await CompanyService.setDefaultCompany(newCompanyId);
-                                        navigate(0);
-                                    } catch (err) {
-                                        console.warn('Failed to save default company, but ignoring:', err);
-                                    }
-                                }
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select company" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {userCompanies.map(company => (
-                                    <SelectItem key={company.id} value={company.id.toString()}>
-                                        {company.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
+                {/* Right side - Avatar Dropdown */}
+                <div className="flex items-center justify-end w-1/3 gap-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className="w-[36px] h-[36px] flex items-center justify-center text-white bg-blue-900 rounded-full text-3xl font-semi-bold">
+                            <div className="w-[36px] h-[36px] flex items-center justify-center text-white bg-blue-900 rounded-full text-3xl font-semi-bold cursor-pointer">
                                 {userFirstLetter}
                             </div>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuItem onClick={() => setIsCompanyModalOpen(true)}>
                                 Create Company
                             </DropdownMenuItem>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <DropdownMenuItem className="justify-between">
+                                        Switch Company
+                                        <ChevronRight className="w-4 h-4 ml-2" />
+                                    </DropdownMenuItem>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="right" align="start">
+                                    {userCompanies.map(company => (
+                                        <DropdownMenuItem
+                                            key={company.id}
+                                            onClick={async () => {
+                                                setSelectedCompanyId(company.id);
+                                                defaultCompanyRef.current = company;
+
+                                                try {
+                                                    await CompanyService.setDefaultCompany(company.id);
+                                                    navigate(0);
+                                                } catch (err) {
+                                                    console.warn('Failed to save default company:', err);
+                                                }
+                                            }}
+                                            className={selectedCompanyId === company.id ? 'font-semibold bg-muted' : ''}
+                                        >
+                                            {company.name}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
             </nav>
+
 
             {/* Company Creation Modal */}
             <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
