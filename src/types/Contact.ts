@@ -6,4 +6,5 @@ export interface Contact {
     phone?: string;
     location?: string;
     isCompany?: boolean;
+    channels?: ('web' | 'whatsapp')[];
 }

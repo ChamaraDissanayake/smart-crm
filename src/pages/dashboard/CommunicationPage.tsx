@@ -210,9 +210,6 @@ const CommunicationPage = () => {
             if (selectedContact?.id !== message.threadId) {
                 setUnreadThreads(prev => new Set(prev).add(message.threadId));
             }
-
-            console.log('Chamara selected:', selectedChannel, message, contacts);
-
         };
 
         const handleNewThread = (thread: { id: string; companyId: string }) => {
