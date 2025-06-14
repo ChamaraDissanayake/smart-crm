@@ -24,11 +24,11 @@ export const Sidebar = () => {
     const isActive = (path: string) => location.pathname === path;
 
     const menuItemClass = (path: string) =>
-        `flex items-center p-2 space-x-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : "font-light"
+        `flex items-center p-2 space-x-2 rounded hover:bg-blue-50 ${isActive(path) ? "font-normal text-blue-400" : "font-light"
         }`;
 
     const subItemClass = (path: string) =>
-        `block p-2 rounded hover:bg-blue-100 ${isActive(path) ? "bg-blue-200 font-semibold" : "font-light"
+        `block p-2 rounded hover:bg-blue-50 ${isActive(path) ? "font-normal text-blue-400" : "font-light"
         }`;
 
     const handleTopLevelClick = () => setOpenMenu(null);
@@ -36,7 +36,7 @@ export const Sidebar = () => {
     const renderLabel = (label: string) => !sidebarCollapsed && <span>{label}</span>;
 
     return (
-        <aside className="p-2 overflow-y-auto transition-all duration-300 border-r bg-blue-50 md:block drop-shadow-md">
+        <aside className="p-2 overflow-y-auto transition-all duration-300 bg-white border-r md:block drop-shadow-md">
             <div className="flex items-center justify-between mb-4">
                 {/* Logo or title */}
                 <div className={`${sidebarCollapsed ? "hidden" : ""}`}>
@@ -71,7 +71,7 @@ export const Sidebar = () => {
                             className={menuItemClass("/dashboard/home")}
                             onClick={handleTopLevelClick}
                         >
-                            <Home size={18} />
+                            <Home size={18} strokeWidth={1.4} />
                             {renderLabel("Home")}
                         </Link>
                     </li>
@@ -81,20 +81,10 @@ export const Sidebar = () => {
                             className={menuItemClass("/dashboard/contacts")}
                             onClick={handleTopLevelClick}
                         >
-                            <PhoneCall size={18} />
+                            <PhoneCall size={18} strokeWidth={1.4} />
                             {renderLabel("Contacts")}
                         </Link>
                     </li>
-                    {/* <li>
-                        <Link
-                            to="/dashboard/communication"
-                            className={menuItemClass("/dashboard/communication")}
-                            onClick={handleTopLevelClick}
-                        >
-                            <MessageSquare size={18} />
-                            {renderLabel("Conversations")}
-                        </Link>
-                    </li> */}
 
                     {/* Communication submenu */}
                     <li>
@@ -103,7 +93,7 @@ export const Sidebar = () => {
                             className="flex items-center justify-between w-full p-2 rounded hover:bg-blue-100"
                         >
                             <span className="flex items-center space-x-2">
-                                <MessageSquare size={18} />
+                                <MessageSquare size={18} strokeWidth={1.4} />
                                 {renderLabel("Communication")}
                             </span>
                             {!sidebarCollapsed &&
@@ -115,14 +105,6 @@ export const Sidebar = () => {
                         </button>
                         {!sidebarCollapsed && openMenu === "communication" && (
                             <ul className="pl-8 mt-1 space-y-1">
-                                <li>
-                                    <Link
-                                        to="/dashboard/communication/my-conversations"
-                                        className={subItemClass("/dashboard/communication/my-conversations")}
-                                    >
-                                        My Conversation
-                                    </Link>
-                                </li>
                                 <li>
                                     <Link
                                         to="/dashboard/follow-ups"
@@ -141,7 +123,7 @@ export const Sidebar = () => {
                                 </li>
                                 <li>
                                     <Link
-                                        to="/dashboard/communication/statistics"
+                                        to="follow-ups"
                                         className={subItemClass("/dashboard/communication/statistics")}
                                     >
                                         Statistics
@@ -149,7 +131,7 @@ export const Sidebar = () => {
                                 </li>
                                 <li>
                                     <Link
-                                        to="/dashboard/communication/settings"
+                                        to="follow-ups"
                                         className={subItemClass("/dashboard/communication/settings")}
                                     >
                                         Settings
@@ -166,7 +148,7 @@ export const Sidebar = () => {
                             className="flex items-center justify-between w-full p-2 rounded hover:bg-blue-100"
                         >
                             <span className="flex items-center space-x-2">
-                                <UserRoundPlus size={18} />
+                                <UserRoundPlus size={18} strokeWidth={1.4} />
                                 {renderLabel("CRM")}
                             </span>
                             {!sidebarCollapsed &&
@@ -201,7 +183,7 @@ export const Sidebar = () => {
                             className="flex items-center justify-between w-full p-2 rounded hover:bg-blue-100"
                         >
                             <span className="flex items-center space-x-2">
-                                <Settings size={18} />
+                                <Settings size={18} strokeWidth={1.4} />
                                 {renderLabel("General Settings")}
                             </span>
                             {!sidebarCollapsed &&
