@@ -107,18 +107,18 @@ export const Sidebar = () => {
                             <ul className="pl-8 mt-1 space-y-1">
                                 <li>
                                     <Link
-                                        to="/dashboard/follow-ups"
-                                        className={subItemClass("/dashboard/follow-ups")}
+                                        to="/dashboard/communication"
+                                        className={subItemClass("/dashboard/communication")}
                                     >
-                                        AI Follow Ups
+                                        Conversation
                                     </Link>
                                 </li>
                                 <li>
                                     <Link
-                                        to="/dashboard/communication"
-                                        className={subItemClass("/dashboard/communication")}
+                                        to="/dashboard/follow-ups"
+                                        className={subItemClass("/dashboard/follow-ups")}
                                     >
-                                        All Conversation
+                                        AI Follow Ups
                                     </Link>
                                 </li>
                                 <li>
