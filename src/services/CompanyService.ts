@@ -46,4 +46,16 @@ export const CompanyService = {
         const res = await api.get(`/company/${companyId}`);
         return res.data;
     },
+
+    getCompanyId: async (): Promise<string | null> => {
+        for (let i = 0; i < 3; i++) {
+            const companyId = localStorage.getItem('selectedCompany');
+            if (companyId) {
+                return companyId;
+            }
+            // Wait 500ms before retrying
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        return null;
+    }
 };

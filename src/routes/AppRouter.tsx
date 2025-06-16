@@ -15,7 +15,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import CRMPage from '../pages/dashboard/CRMPage';
 import ContactPage from '../pages/dashboard/ContactPage';
 import HomePage from '../pages/dashboard/HomePage';
-import CommunicationPage from '@/pages/dashboard/CommunicationPage';
+import CommunicationPage from '@/pages/dashboard/communication/CommunicationPage';
 import AccountPage from '@/pages/dashboard/settings/AccountPage';
 import ApiPage from '@/pages/dashboard/settings/ApiPage';
 import TeamPage from '@/pages/dashboard/settings/TeamPage';

@@ -1,10 +1,10 @@
 // src/services/helpers/socket.ts
-import { Message } from "@/types/Chat";
+import { ChatHead, Message } from "@/types/Communication";
 import { io, Socket } from "socket.io-client";
 
 interface ServerToClientEvents {
     "new-message": (message: Message) => void;
-    "new-thread": (thread: { id: string; companyId: string }) => void;
+    "new-thread": (thread: ChatHead & { companyId: string }) => void;
 }
 
 interface ClientToServerEvents {

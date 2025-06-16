@@ -1,7 +1,8 @@
 import { generateLeads } from "./helpers/generateLeads";
 import { toast } from 'react-toastify';
 import api from './Api';
-import { Contact } from "@/types/Contact";
+import { Contact } from "@/types/Communication";
+import { CompanyService } from "./CompanyService";
 
 export interface Lead {
     id: number;
@@ -56,7 +57,7 @@ export const OpportunityService = {
 
     getCompanyContacts: async (): Promise<Contact[]> => {
         try {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             const { data } = await api.get('/customer/get-customers', {
                 params: { companyId, limit: 1000, offset: 0 },
             });
@@ -70,7 +71,7 @@ export const OpportunityService = {
 
     getCompanyContactCount: async (): Promise<number> => {
         try {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             const { data } = await api.get('/customer/get-count', {
                 params: { companyId },
             });
@@ -83,7 +84,7 @@ export const OpportunityService = {
 
     createContact: async (contactData: Omit<Contact, 'id'>): Promise<Contact | null> => {
         try {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             const { data } = await api.post('/customer/create-customer', {
                 ...contactData,
                 companyId
@@ -99,7 +100,7 @@ export const OpportunityService = {
 
     updateContact: async (contactId: string, contactData: Omit<Contact, 'id'>): Promise<Contact | null> => {
         try {
-            const companyId = localStorage.getItem('selectedCompany');
+            const companyId = await CompanyService.getCompanyId();
             const { data } = await api.post(`/customer/update-customer`, {
                 id: contactId,
                 companyId,
