@@ -35,6 +35,7 @@ export interface ContactHeader {
     id: string;
     name: string;
     phone: string;
+    customerId: string;
     channel: ChannelType;
     lastMessage: string;
     lastMessageRole?: RoleType;

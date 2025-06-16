@@ -110,7 +110,7 @@ export const Sidebar = () => {
                                         to="/dashboard/communication"
                                         className={subItemClass("/dashboard/communication")}
                                     >
-                                        Conversation
+                                        Conversations
                                     </Link>
                                 </li>
                                 <li>

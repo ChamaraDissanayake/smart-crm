@@ -38,6 +38,7 @@ const CommunicationPage = () => {
             if (formattedContacts.length === 0) {
                 const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
                 formattedContacts = formatAndSortChatHeads(chatHeads);
+                console.log('Chamara chat heads data', formattedContacts);
                 setContacts(formattedContacts);
             }
 
@@ -197,6 +198,7 @@ const CommunicationPage = () => {
                         id: thread.id,
                         name: thread.customer.name || thread.customer.phone,
                         phone: thread.customer.phone,
+                        customerId: thread.customer.id,
                         lastMessage: thread.lastMessage?.content || '',
                         lastMessageRole: thread.lastMessage?.role as RoleType | undefined,
                         channel: thread.channel,
@@ -227,6 +229,7 @@ const CommunicationPage = () => {
                         id: thread.id,
                         name: thread.customer.name || thread.customer.phone,
                         phone: thread.customer.phone,
+                        customerId: thread.customer.id,
                         lastMessage: thread.lastMessage?.content || '',
                         lastMessageRole: thread.lastMessage?.role as RoleType | undefined,
                         channel: thread.channel,

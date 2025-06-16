@@ -4,7 +4,7 @@ import { ContactModal } from '../../components/ContactModal';
 import { Button } from '@/components/ui/button';
 import { OpportunityService } from '@/services/OpportunityService';
 import { FaWhatsapp } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Contact } from '@/types/Contact';
 import {
     DropdownMenu,
@@ -29,9 +29,8 @@ const ContactPage = () => {
     const [typeFilter, setTypeFilter] = useState<'all' | 'company' | 'individual'>('all');
     const [withPhoneOnly, setWithPhoneOnly] = useState(false);
     const [withEmailOnly, setWithEmailOnly] = useState(false);
-
-
-
+    const [searchParams] = useSearchParams();
+    const contactIdFromUrl = searchParams.get('id');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -44,6 +43,21 @@ const ContactPage = () => {
         try {
             const data = await OpportunityService.getCompanyContacts();
             setContacts(data);
+
+            // Handle modal open by ID from URL
+            console.log('Chamara contact', contactIdFromUrl);
+
+            if (contactIdFromUrl) {
+                const matched = data.find((c) => c.id === contactIdFromUrl);
+                if (matched) {
+                    setSelectedContact(matched);
+                    setContactModalMode('view');
+                    setIsContactModalOpen(true);
+                } else {
+                    console.log('Chamara not match', data);
+
+                }
+            }
         } catch (error) {
             console.error('Error fetching contacts:', error);
         } finally {

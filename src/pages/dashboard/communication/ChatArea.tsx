@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from '@/lib/utils';
 import { Message, ContactHeader } from '@/types/Communication';
 import { User } from '@/types/User';
+import { useNavigate } from 'react-router-dom';
+
 
 interface ChatAreaProps {
     // Channel Sidebar
@@ -65,8 +67,17 @@ export const ChatArea = ({
     isSending,
     onMessageChange,
     onSendMessage,
-    messagesEndRef
+    messagesEndRef,
 }: ChatAreaProps) => {
+
+    const navigate = useNavigate();
+
+    const handleContactClick = () => {
+        if (selectedContact) {
+            navigate(`/dashboard/contacts?id=${selectedContact.customerId}`);
+        }
+    }
+
     return (
         <div className="flex h-full bg-gray-50">
             {/* Channel Sidebar */}
@@ -193,7 +204,10 @@ export const ChatArea = ({
                     <>
                         {/* Chat Header */}
                         <div className="flex items-center justify-between p-4 border-b">
-                            <div className="flex items-center gap-3">
+                            <div
+                                className="flex items-center gap-3 cursor-pointer"
+                                onClick={handleContactClick} // 👉 replace with your actual click handler
+                            >
                                 <div className="relative flex items-center justify-center w-10 h-10 text-white bg-green-500 rounded-full">
                                     {selectedContact.name.charAt(0)}
                                 </div>
@@ -211,13 +225,17 @@ export const ChatArea = ({
                                                 ChatBot
                                             </span>
                                         )}
+
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <ChevronsUp
                                                         size={18}
                                                         className={isFollowUp ? "text-green-500" : "text-gray-400"}
-                                                        onClick={onToggleFollowUp}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // prevent parent click
+                                                            onToggleFollowUp();
+                                                        }}
                                                     />
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -228,6 +246,7 @@ export const ChatArea = ({
                                     </div>
                                 </div>
                             </div>
+
 
                             <div className="flex items-center gap-4">
                                 <div className="bg-white rounded-md w-[8rem] text-sm">
