@@ -19,6 +19,12 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
         transports: ["websocket", "polling"],
         autoConnect: false, // We'll manually connect after setting up listeners
         withCredentials: true,
+
+        // 🔒 Long-living connection settings
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        timeout: 20000, // Connection timeout (ms)
     }
 );
 
