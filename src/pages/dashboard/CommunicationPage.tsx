@@ -29,10 +29,6 @@ const CommunicationPage = () => {
     const [isFollowUp, setIsFollowUp] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const channelChangeHandler = (channel: string) => {
-        setSelectedChannel(channel);
-    };
-
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
         const companyId = await CompanyService.getCompanyId();
@@ -188,9 +184,7 @@ const CommunicationPage = () => {
                 });
 
                 // Mark as unread if not the current chat
-                if (selectedContact?.id !== message.threadId) {
-                    console.log('Chamara setting unread', selectedContact, message);
-
+                if (selectedContactRef.current?.id !== message.threadId) {
                     setUnreadThreads(prev => new Set(prev).add(message.threadId));
                 }
             };
@@ -367,8 +361,8 @@ const CommunicationPage = () => {
                 if (!debouncedSearchQuery) return true;
                 const query = debouncedSearchQuery.toLowerCase();
                 return (
-                    contact.name.toLowerCase().includes(query) ||
-                    contact.phone.toLowerCase().includes(query)
+                    contact?.name?.toLowerCase().includes(query) ||
+                    contact?.phone?.toLowerCase().includes(query)
                 );
             });
 
@@ -386,8 +380,6 @@ const CommunicationPage = () => {
             }
         } else {
             if (selectedContactRef.current !== null) {
-                console.log('Chamara setting null');
-
                 setSelectedContact(null);
             }
         }
@@ -522,7 +514,6 @@ const CommunicationPage = () => {
             whatsapp: 0,
             web: 0
         };
-        console.log('Chamara unread threads', unreadThreads);
 
         for (const contact of contacts) {
             if (unreadThreads.has(contact.id)) {
@@ -531,6 +522,7 @@ const CommunicationPage = () => {
                 if (contact.channel === 'web') counts.web++;
             }
         }
+        console.log('Chamara counts', counts, unreadThreads);
 
         return counts;
     }, [contacts, unreadThreads]);
@@ -546,7 +538,7 @@ const CommunicationPage = () => {
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'all' && 'bg-blue-100 text-blue-600'
                         )}
-                        onClick={() => channelChangeHandler('all')}
+                        onClick={() => setSelectedChannel('all')}
                         title="All Channels"
                     >
                         <div className="relative">
@@ -565,7 +557,7 @@ const CommunicationPage = () => {
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'whatsapp' && 'bg-green-100 text-green-600'
                         )}
-                        onClick={() => channelChangeHandler('whatsapp')}
+                        onClick={() => setSelectedChannel('whatsapp')}
                         title="WhatsApp"
                     >
                         <div className="relative">
@@ -584,7 +576,7 @@ const CommunicationPage = () => {
                             'p-2 rounded-full md:rounded-md md:w-full md:flex md:items-center md:gap-2',
                             selectedChannel === 'web' && 'bg-purple-100 text-purple-600'
                         )}
-                        onClick={() => channelChangeHandler('web')}
+                        onClick={() => setSelectedChannel('web')}
                         title="ChatBot"
                     >
 
@@ -609,7 +601,7 @@ const CommunicationPage = () => {
                         placeholder="Search contacts..."
                         className="w-full p-2 pl-3 pr-8 text-sm border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+                        onChange={(e) => setSearchQuery(e.target?.value)}
                     />
                     {searchQuery && (
                         <button
