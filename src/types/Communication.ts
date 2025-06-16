@@ -11,35 +11,40 @@ export interface Contact {
 }
 export interface ChatHead {
     id: string;
-    channel: 'web' | 'whatsapp' | 'all';
+    channel: ChannelType;
     customer: Customer;
-    currentHandler: 'bot' | 'agent';
+    currentHandler: CurrentHandlerType;
     assignee: string;
     lastMessage?: {
-        content: string,
-        role: string,
-        createdAt: string
+        content: string;
+        role: string;
+        createdAt: string;
     }
 }
 
 export interface Message {
     id: string;
     threadId: string;
-    role: 'user' | 'assistant';
+    role: RoleType;
     content: string;
     createdAt: string;
-    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+    status?: StatusType;
 }
 
 export interface ContactHeader {
     id: string;
     name: string;
     phone: string;
-    channel: 'web' | 'whatsapp' | 'all';
+    channel: ChannelType;
     lastMessage: string;
-    lastMessageRole?: 'user' | 'assistant';
-    currentHandler: 'bot' | 'agent';
+    lastMessageRole?: RoleType;
+    currentHandler: CurrentHandlerType;
     assignee: string;
     createdAt: string;
     time?: string;
 }
+
+export type ChannelType = 'all' | 'whatsapp' | 'web';
+export type CurrentHandlerType = 'bot' | 'agent';
+export type RoleType = 'user' | 'assistant';
+export type StatusType = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';

@@ -1,5 +1,5 @@
 
-import { ChatHead, ContactHeader } from '@/types/Communication';
+import { ChatHead, ContactHeader, RoleType } from '@/types/Communication';
 
 export function formatAndSortChatHeads(chatHeads: ChatHead[]): ContactHeader[] {
     const formatted = chatHeads.map((head) => ({
@@ -7,7 +7,7 @@ export function formatAndSortChatHeads(chatHeads: ChatHead[]): ContactHeader[] {
         name: head.customer.name || head.customer.phone,
         phone: head.customer.phone,
         lastMessage: head.lastMessage?.content || '',
-        lastMessageRole: head.lastMessage?.role as 'user' | 'assistant' | undefined,
+        lastMessageRole: head.lastMessage?.role as RoleType | undefined,
         channel: head.channel,
         currentHandler: head.currentHandler,
         assignee: head.assignee,

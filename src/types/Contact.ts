@@ -1,3 +1,5 @@
+import { ChannelType } from "./Communication";
+
 export interface Contact {
     id: string;
     name: string;
@@ -6,5 +8,5 @@ export interface Contact {
     phone?: string;
     location?: string;
     isCompany?: boolean;
-    channels?: ('web' | 'whatsapp')[];
+    channels?: ChannelType[];
 }
