@@ -38,7 +38,6 @@ const CommunicationPage = () => {
             if (formattedContacts.length === 0) {
                 const chatHeads: ChatHead[] = await ChatService.getChatHeads(companyId, selectedChannel);
                 formattedContacts = formatAndSortChatHeads(chatHeads);
-                console.log('Chamara chat heads data', formattedContacts);
                 setContacts(formattedContacts);
             }
 

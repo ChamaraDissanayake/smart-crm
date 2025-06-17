@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Message, ContactHeader } from '@/types/Communication';
 import { User } from '@/types/User';
 import { useNavigate } from 'react-router-dom';
-
+import { LinkifyMessage } from '@/utils/linkifyOptions';
 
 interface ChatAreaProps {
     // Channel Sidebar
@@ -199,7 +199,7 @@ export const ChatArea = ({
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex flex-col flex-1 bg-white min-w-[480px]">
+            <div className="flex flex-col flex-1 bg-white min-w-[590px]">
                 {selectedContact ? (
                     <>
                         {/* Chat Header */}
@@ -288,7 +288,10 @@ export const ChatArea = ({
                                         message.status === 'failed' && 'opacity-70'
                                     )}
                                 >
-                                    <div className='mr-4'>{message.content}</div>
+                                    <LinkifyMessage
+                                        content={message.content}
+                                        className="mr-4 break-words"
+                                    />
                                     <div className="flex items-center justify-end gap-1 mt-1">
                                         <span className="text-xs opacity-70">{message.createdAt}</span>
                                         {message.role === 'user' && (
