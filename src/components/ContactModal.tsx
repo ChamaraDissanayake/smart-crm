@@ -61,7 +61,8 @@ export const ContactModal = ({
         if (!isOpen) return;
 
         if (initialData) {
-            const matchedCountry = COUNTRIES.find(c => c.code === initialData.code) || defaultCountry;
+            // Find the country either by code from initialData or fallback to first country
+            const matchedCountry = COUNTRIES.find(c => c.code === initialData.code) || COUNTRIES[0];
             setContactData({
                 name: initialData.name || '',
                 email: initialData.email || '',
@@ -73,7 +74,8 @@ export const ContactModal = ({
             });
             setSelectedPhoneCode(matchedCountry);
         } else {
-            // Reset to defaults for new contact
+            // For new contacts, use default country (UAE) or first country if not found
+            const defaultCountry = COUNTRIES.find(c => c.code === 'AE') || COUNTRIES[0];
             setContactData({
                 name: '',
                 email: '',
@@ -87,7 +89,7 @@ export const ContactModal = ({
         }
         setMode(modeFromProps);
         setErrors({});
-    }, [isOpen, initialData, modeFromProps, defaultCountry]);
+    }, [isOpen, initialData, modeFromProps]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -108,7 +110,7 @@ export const ContactModal = ({
 
     const handleCancelEdit = () => {
         if (initialData) {
-            const matchedCountry = COUNTRIES.find(c => c.code === initialData.code) || defaultCountry;
+            const matchedCountry = COUNTRIES.find(c => c.code === initialData.code) || COUNTRIES[0];
             setContactData({
                 name: initialData.name || '',
                 email: initialData.email || '',
@@ -116,6 +118,7 @@ export const ContactModal = ({
                 location: initialData.location || matchedCountry.name,
                 isCompany: !!initialData.isCompany,
                 code: matchedCountry.code,
+                channels: initialData.channels || []
             });
             setSelectedPhoneCode(matchedCountry);
         }
