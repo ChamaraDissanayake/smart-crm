@@ -2,7 +2,7 @@
 import axios from "axios";
 import socket from "./helpers/socket";
 import api from "./Api";
-import { ChatHead, Message } from "@/types/Communication";
+import { ChannelType, ChatHead, Message } from "@/types/Communication";
 import { CompanyService } from "./CompanyService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -154,9 +154,10 @@ const ChatService = {
         }
     },
 
-    assignChat: async (threadId: string, chatHandler: string, assignedAgentId: string | null) => {
+    assignChat: async (threadId: string, chatHandler: string, assignedAgentId: string | null, channel: ChannelType, phone?: string) => {
         try {
-            const res = await api.patch(`/chat/assign`, { threadId, chatHandler, assignedAgentId });
+            const companyId = await CompanyService.getCompanyId();
+            const res = await api.patch(`/chat/assign`, { threadId, chatHandler, assignedAgentId, channel, phone, companyId });
             console.log(res);
         } catch (error) {
             console.log(error);

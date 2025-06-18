@@ -441,7 +441,7 @@ const CommunicationPage = () => {
                 assignedAgentId = newAssignee;
             }
 
-            await ChatService.assignChat(selectedContact.id, chatHandler, assignedAgentId);
+            await ChatService.assignChat(selectedContact.id, chatHandler, assignedAgentId, selectedContact.channel, selectedContact?.phone);
 
             setContacts(prev =>
                 prev.map(c =>

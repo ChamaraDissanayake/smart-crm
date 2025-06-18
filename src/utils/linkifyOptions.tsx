@@ -17,7 +17,6 @@ interface LinkifyMessageProps {
 const linkifyOptions = {
   formatHref: (href: string) => href,
   target: '_blank',
-  className: 'text-blue-600 hover:underline break-all',
   render: ({ attributes, content }: RenderLinkArgs): JSX.Element => {
     const href = attributes.href ?? '';
     const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(href);
@@ -75,14 +74,18 @@ const linkifyOptions = {
               <FaDownload className="w-4 h-4 text-gray-700" />
             </Button>
           </div>
-          <a {...attributes} className="text-blue-600 hover:underline">
+          <a {...attributes} className="text-blue-400 break-all hover:underline">
             {content}
           </a>
         </div>
       );
     }
 
-    return <a {...attributes}>{content}</a>;
+    return (
+      <a {...attributes} className="text-blue-400 break-all hover:underline">
+        {content}
+      </a>
+    );
   }
 };
 
