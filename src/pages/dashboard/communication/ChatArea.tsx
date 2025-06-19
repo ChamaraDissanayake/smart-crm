@@ -8,6 +8,8 @@ import { Message, ContactHeader } from '@/types/Communication';
 import { User } from '@/types/User';
 import { useNavigate } from 'react-router-dom';
 import { LinkifyMessage } from '@/utils/linkifyOptions';
+import { AttachmentHandler, PendingAttachment } from './AttachmentHandler';
+import { useState } from 'react';
 
 interface ChatAreaProps {
     // Channel Sidebar
@@ -41,7 +43,7 @@ interface ChatAreaProps {
     newMessage: string;
     isSending: boolean;
     onMessageChange: (value: string) => void;
-    onSendMessage: () => void;
+    onSendMessage: (message: string, attachments: PendingAttachment[]) => void;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -71,6 +73,7 @@ export const ChatArea = ({
 }: ChatAreaProps) => {
 
     const navigate = useNavigate();
+    const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
 
     const handleContactClick = () => {
         if (selectedContact) {
@@ -308,7 +311,7 @@ export const ChatArea = ({
                         </ScrollArea>
 
                         {/* Message Input */}
-                        <div className="p-3 border-t">
+                        {/* <div className="p-3 border-t">
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -327,6 +330,41 @@ export const ChatArea = ({
                                 >
                                     <FaPaperPlane />
                                 </button>
+                            </div>
+                        </div> */}
+
+                        {/* Message Input Area */}
+                        <div className="relative p-3 space-y-2 border-t">
+                            <div className='absolute bottom-[21px] left-[12px]'>
+                                <AttachmentHandler onAttachmentsChange={setPendingAttachments} />
+                            </div>
+
+                            <div className="flex items-center gap-2 ml-[2.5rem]">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => onMessageChange(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && onSendMessage(newMessage, pendingAttachments)}
+                                    className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Type a message..."
+                                    disabled={isSending}
+                                />
+
+                                <button
+                                    onClick={() => {
+                                        console.log('Attachments to send:', pendingAttachments);
+                                        console.log('Message:', newMessage);
+
+                                        onSendMessage(newMessage, pendingAttachments); // ✅ Pass attachments
+                                        setPendingAttachments([]);
+                                    }}
+                                    disabled={isSending || (!newMessage.trim() && pendingAttachments.length === 0)}
+                                    className="p-3 text-white bg-green-500 rounded-lg disabled:opacity-50"
+                                    title="Send Message"
+                                >
+                                    <FaPaperPlane />
+                                </button>
+
                             </div>
                         </div>
                     </>

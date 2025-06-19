@@ -8,6 +8,7 @@ import { CompanyService } from '@/services/CompanyService';
 import { ChatArea } from './ChatArea';
 import ChatService from '@/services/ChatService';
 import { useDebounce } from '@/hooks/useDebounce';
+import { PendingAttachment } from './AttachmentHandler';
 
 const CommunicationPage = () => {
     const [selectedChannel, setSelectedChannel] = useState('all');
@@ -309,21 +310,73 @@ const CommunicationPage = () => {
         getCompanyUsers();
     }, []);
 
-    const handleSendMessage = async () => {
-        if (!newMessage.trim() || isSending || !selectedContact) return;
+    // const handleSendMessage = async () => {
+    //     console.log('Chamara test', newMessage, isSending, selectedContact);
+
+    //     if (!newMessage.trim() || isSending || !selectedContact) return;
+    //     setIsSending(true);
+    //     setNewMessage('');
+
+    //     try {
+    //         if (selectedContact.channel === 'whatsapp') {
+    //             await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
+    //         } else if (selectedContact.channel === 'web') {
+    //             await ChatService.sendWebMessage(selectedContact.id, newMessage);
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to send message:', error);
+    //         toast.error('Failed to send message');
+    //         setNewMessage(newMessage);
+    //     } finally {
+    //         setIsSending(false);
+    //     }
+    // };
+
+    const handleSendMessage = async (message: string, attachments: PendingAttachment[]) => {
+        if (isSending || !selectedContact || (!message.trim() && attachments.length === 0)) return;
         setIsSending(true);
         setNewMessage('');
 
         try {
             if (selectedContact.channel === 'whatsapp') {
-                await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
+                // 3.1 & 3.2: WhatsApp media messages
+                for (const attachment of attachments) {
+                    const isMedia = attachment.type === 'image' || attachment.type === 'video';
+
+                    await ChatService.sendWhatsAppMediaMessage(
+                        selectedContact.phone,
+                        attachment.file,
+                        isMedia ? attachment.caption?.trim() || '' : '', // Use caption only for media
+                        (percent) => {
+                            console.log(`Uploading ${attachment.file.name}: ${percent}%`);
+                        }
+                    );
+                }
+
+                // 2: WhatsApp text-only message (not already used as media caption)
+                const noCaptionsUsed = attachments.length === 0 ||
+                    attachments.every(att => !att.caption?.trim());
+
+                if (message.trim() && noCaptionsUsed) {
+                    await ChatService.sendWhatsAppMessage(selectedContact.phone, message.trim());
+                }
+
             } else if (selectedContact.channel === 'web') {
-                await ChatService.sendWebMessage(selectedContact.id, newMessage);
+                // 1: Web message (only message for now)
+                if (message.trim()) {
+                    await ChatService.sendWebMessage(selectedContact.id, message.trim());
+                }
+
+                // Optional: handle web file uploads if needed later
+                for (const attachment of attachments) {
+                    console.log('Web channel attachment (not yet implemented):', attachment);
+                }
             }
+
         } catch (error) {
-            console.error('Failed to send message:', error);
+            console.error('Failed to send:', error);
             toast.error('Failed to send message');
-            setNewMessage(newMessage);
+            setNewMessage(message);
         } finally {
             setIsSending(false);
         }

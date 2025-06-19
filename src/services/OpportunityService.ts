@@ -1,4 +1,4 @@
-import { generateLeads } from "./helpers/generateLeads";
+import { generateLeads } from "./helpers/GenerateLeads";
 import { toast } from 'react-toastify';
 import api from './Api';
 import { Contact } from "@/types/Communication";

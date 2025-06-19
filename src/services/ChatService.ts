@@ -1,9 +1,9 @@
 // src/services/ChatService.ts
-import axios from "axios";
-import socket from "./helpers/socket";
+import socket from "./helpers/Socket";
 import api from "./Api";
 import { ChannelType, ChatHead, Message } from "@/types/Communication";
 import { CompanyService } from "./CompanyService";
+import FileUploadService from "./helpers/FileUploadService";
 
 const CHAT_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -104,7 +104,7 @@ const ChatService = {
     sendWhatsAppMessage: async (to: string, message: string) => {
         try {
             const companyId = await CompanyService.getCompanyId();
-            const response = await axios.post(`${CHAT_BASE_URL}/whatsapp/send`, {
+            const response = await api.post(`${CHAT_BASE_URL}/whatsapp/send`, {
                 to,
                 message,
                 companyId
@@ -116,9 +116,32 @@ const ChatService = {
         }
     },
 
+    sendWhatsAppMediaMessage: async (to: string, file: File, caption: string = '', onProgress?: (percentage: number) => void) => {
+        try {
+            // First upload the file
+            const { fileId } = await FileUploadService.uploadFile(file, onProgress);
+
+            // Then send via WhatsApp
+            const companyId = await CompanyService.getCompanyId();
+            console.log('Chamara', to, fileId, caption);
+
+            const response = await api.post(`${CHAT_BASE_URL}/whatsapp/send-media`, {
+                to,
+                fileId,
+                caption,
+                companyId
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error("Error sending media message:", error);
+            throw error;
+        }
+    },
+
     sendWebMessage: async (threadId: string, message: string) => {
         try {
-            const response = await axios.post(`${CHAT_BASE_URL}/chat/chat-web-send`, {
+            const response = await api.post(`${CHAT_BASE_URL}/chat/chat-web-send`, {
                 threadId,
                 message
             });
