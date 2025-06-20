@@ -25,6 +25,7 @@ const CommunicationPage = () => {
     const [isFollowUp, setIsFollowUp] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
+    const chatAreaRef = useRef<{ handleRemove: (fileName: string) => void }>(null);
 
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
@@ -310,28 +311,6 @@ const CommunicationPage = () => {
         getCompanyUsers();
     }, []);
 
-    // const handleSendMessage = async () => {
-    //     console.log('Chamara test', newMessage, isSending, selectedContact);
-
-    //     if (!newMessage.trim() || isSending || !selectedContact) return;
-    //     setIsSending(true);
-    //     setNewMessage('');
-
-    //     try {
-    //         if (selectedContact.channel === 'whatsapp') {
-    //             await ChatService.sendWhatsAppMessage(selectedContact.phone, newMessage);
-    //         } else if (selectedContact.channel === 'web') {
-    //             await ChatService.sendWebMessage(selectedContact.id, newMessage);
-    //         }
-    //     } catch (error) {
-    //         console.error('Failed to send message:', error);
-    //         toast.error('Failed to send message');
-    //         setNewMessage(newMessage);
-    //     } finally {
-    //         setIsSending(false);
-    //     }
-    // };
-
     const handleSendMessage = async (message: string, attachments: PendingAttachment[]) => {
         if (isSending || !selectedContact || (!message.trim() && attachments.length === 0)) return;
         setIsSending(true);
@@ -343,15 +322,25 @@ const CommunicationPage = () => {
                 for (const attachment of attachments) {
                     const isMedia = attachment.type === 'image' || attachment.type === 'video';
 
-                    await ChatService.sendWhatsAppMediaMessage(
-                        selectedContact.phone,
-                        attachment.file,
-                        isMedia ? attachment.caption?.trim() || '' : '', // Use caption only for media
-                        (percent) => {
-                            console.log(`Uploading ${attachment.file.name}: ${percent}%`);
-                        }
-                    );
+                    try {
+                        await ChatService.sendWhatsAppMediaMessage(
+                            selectedContact.phone,
+                            attachment.file,
+                            isMedia ? attachment.caption?.trim() || '' : '', // Use caption only for media
+                            (percent) => {
+                                console.log(`Uploading ${attachment.file.name}: ${percent}%`);
+                            }
+                        );
+
+                        // On success
+                        chatAreaRef.current?.handleRemove(attachment.file.name);
+                        toast.success(`${attachment.file.name} sent`);
+                    } catch (error) {
+                        console.error(`Failed to send ${attachment.file.name}:`, error);
+                        toast.error(`Failed to send ${attachment.file.name}`);
+                    }
                 }
+
 
                 // 2: WhatsApp text-only message (not already used as media caption)
                 const noCaptionsUsed = attachments.length === 0 ||
@@ -554,6 +543,7 @@ const CommunicationPage = () => {
             onMessageChange={setNewMessage}
             onSendMessage={handleSendMessage}
             messagesEndRef={messagesEndRef}
+            ref={chatAreaRef}
         />
     );
 };

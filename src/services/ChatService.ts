@@ -123,7 +123,6 @@ const ChatService = {
 
             // Then send via WhatsApp
             const companyId = await CompanyService.getCompanyId();
-            console.log('Chamara', to, fileId, caption);
 
             const response = await api.post(`${CHAT_BASE_URL}/whatsapp/send-media`, {
                 to,

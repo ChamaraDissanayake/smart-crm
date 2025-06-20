@@ -1,3 +1,4 @@
+// These are all extentions allowed in WhatsApp
 export const ALLOWED_EXTENSIONS = [
     // Images
     '.jpg', '.jpeg', '.png',
