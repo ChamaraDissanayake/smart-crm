@@ -9,6 +9,7 @@ import { ChatArea } from './ChatArea';
 import ChatService from '@/services/ChatService';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PendingAttachment } from './AttachmentHandler';
+import FullScreenUploadOverlay from '@/components/ui/full-screen-upload-overlay';
 
 const CommunicationPage = () => {
     const [selectedChannel, setSelectedChannel] = useState('all');
@@ -26,6 +27,9 @@ const CommunicationPage = () => {
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const chatAreaRef = useRef<{ handleRemove: (fileName: string) => void }>(null);
+    const [showOverlay, setShowOverlay] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
 
     // Fetch chat heads whenever selectedChannel changes
     const fetchChatHeads = useCallback(async () => {
@@ -316,47 +320,77 @@ const CommunicationPage = () => {
         setIsSending(true);
         setNewMessage('');
 
+        const hasMedia = attachments.length > 0;
+
         try {
+            if (hasMedia) {
+                setShowOverlay(true);
+                setUploadProgress(0);
+            }
+
             if (selectedContact.channel === 'whatsapp') {
-                // 3.1 & 3.2: WhatsApp media messages
+                const totalSize = attachments.reduce((sum, att) => sum + att.file.size, 0);
+                let uploadedSize = 0;
+
                 for (const attachment of attachments) {
                     const isMedia = attachment.type === 'image' || attachment.type === 'video';
 
+                    // Start visual progress animation in parallel
+                    const simulateProgress = new Promise<void>((resolve) => {
+                        const size = attachment.file.size;
+                        let visualUploaded = 0;
+                        const chunk = size / 20;
+
+                        const interval = setInterval(() => {
+                            visualUploaded += chunk;
+                            const percent = Math.min(((uploadedSize + visualUploaded) / totalSize) * 100, 100);
+                            setUploadProgress(Math.round(percent));
+
+                            if (visualUploaded >= size) {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, 50);
+                    });
+
+                    // Start actual upload (we do NOT wait for visual to finish)
                     try {
                         await ChatService.sendWhatsAppMediaMessage(
                             selectedContact.phone,
                             attachment.file,
-                            isMedia ? attachment.caption?.trim() || '' : '', // Use caption only for media
-                            (percent) => {
-                                console.log(`Uploading ${attachment.file.name}: ${percent}%`);
-                            }
+                            isMedia ? attachment.caption?.trim() || '' : '',
+                            () => { }
                         );
 
-                        // On success
+                        uploadedSize += attachment.file.size;
+
+                        // Update progress to reflect actual upload completion
+                        const percent = Math.min((uploadedSize / totalSize) * 100, 100);
+                        setUploadProgress(Math.round(percent));
+
                         chatAreaRef.current?.handleRemove(attachment.file.name);
                         toast.success(`${attachment.file.name} sent`);
                     } catch (error) {
                         console.error(`Failed to send ${attachment.file.name}:`, error);
                         toast.error(`Failed to send ${attachment.file.name}`);
                     }
+
+                    // Let visual progress finish independently
+                    await simulateProgress;
                 }
 
-
-                // 2: WhatsApp text-only message (not already used as media caption)
                 const noCaptionsUsed = attachments.length === 0 ||
                     attachments.every(att => !att.caption?.trim());
 
                 if (message.trim() && noCaptionsUsed) {
                     await ChatService.sendWhatsAppMessage(selectedContact.phone, message.trim());
                 }
-
-            } else if (selectedContact.channel === 'web') {
-                // 1: Web message (only message for now)
+            }
+            else if (selectedContact.channel === 'web') {
                 if (message.trim()) {
                     await ChatService.sendWebMessage(selectedContact.id, message.trim());
                 }
 
-                // Optional: handle web file uploads if needed later
                 for (const attachment of attachments) {
                     console.log('Web channel attachment (not yet implemented):', attachment);
                 }
@@ -368,6 +402,8 @@ const CommunicationPage = () => {
             setNewMessage(message);
         } finally {
             setIsSending(false);
+            setShowOverlay(false);
+            setUploadProgress(0);
         }
     };
 
@@ -520,31 +556,34 @@ const CommunicationPage = () => {
     }, [contacts, unreadThreads]);
 
     return (
-        <ChatArea
-            selectedChannel={selectedChannel}
-            unreadCounts={unreadCounts}
-            onChannelChange={setSelectedChannel}
-            filteredContacts={filteredContacts}
-            selectedContact={selectedContact}
-            unreadThreads={unreadThreads}
-            searchQuery={searchQuery}
-            onSelectContact={handleSelectContact}
-            onSearchChange={setSearchQuery}
-            onClearSearch={() => setSearchQuery('')}
-            users={users}
-            selectedAssignee={selectedAssignee}
-            isFollowUp={isFollowUp}
-            onAssigneeChange={handleAssigneeChange}
-            onMarkAsDone={handleMarkAsDone}
-            onToggleFollowUp={handleFollowUp}
-            messages={messages}
-            newMessage={newMessage}
-            isSending={isSending}
-            onMessageChange={setNewMessage}
-            onSendMessage={handleSendMessage}
-            messagesEndRef={messagesEndRef}
-            ref={chatAreaRef}
-        />
+        <>
+            <FullScreenUploadOverlay show={showOverlay} progress={uploadProgress} />
+            <ChatArea
+                selectedChannel={selectedChannel}
+                unreadCounts={unreadCounts}
+                onChannelChange={setSelectedChannel}
+                filteredContacts={filteredContacts}
+                selectedContact={selectedContact}
+                unreadThreads={unreadThreads}
+                searchQuery={searchQuery}
+                onSelectContact={handleSelectContact}
+                onSearchChange={setSearchQuery}
+                onClearSearch={() => setSearchQuery('')}
+                users={users}
+                selectedAssignee={selectedAssignee}
+                isFollowUp={isFollowUp}
+                onAssigneeChange={handleAssigneeChange}
+                onMarkAsDone={handleMarkAsDone}
+                onToggleFollowUp={handleFollowUp}
+                messages={messages}
+                newMessage={newMessage}
+                isSending={isSending}
+                onMessageChange={setNewMessage}
+                onSendMessage={handleSendMessage}
+                messagesEndRef={messagesEndRef}
+                ref={chatAreaRef}
+            />
+        </>
     );
 };
 
