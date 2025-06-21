@@ -35,35 +35,31 @@ const ContactPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const fetchContacts = async () => {
+            setIsLoading(true);
+            try {
+                const data = await OpportunityService.getCompanyContacts();
+                setContacts(data);
+            } catch (error) {
+                console.error('Error fetching contacts:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         fetchContacts();
     }, []);
 
-    const fetchContacts = async () => {
-        setIsLoading(true);
-        try {
-            const data = await OpportunityService.getCompanyContacts();
-            setContacts(data);
-
-            // Handle modal open by ID from URL
-            console.log('Chamara contact', contactIdFromUrl);
-
-            if (contactIdFromUrl) {
-                const matched = data.find((c) => c.id === contactIdFromUrl);
-                if (matched) {
-                    setSelectedContact(matched);
-                    setContactModalMode('view');
-                    setIsContactModalOpen(true);
-                } else {
-                    console.log('Chamara not match', data);
-
-                }
+    useEffect(() => {
+        if (contactIdFromUrl && contacts.length > 0) {
+            const matched = contacts.find((c) => c.id === contactIdFromUrl);
+            if (matched) {
+                setSelectedContact(matched);
+                setContactModalMode('view');
+                setIsContactModalOpen(true);
             }
-        } catch (error) {
-            console.error('Error fetching contacts:', error);
-        } finally {
-            setIsLoading(false);
         }
-    };
+    }, [contactIdFromUrl, contacts]); // Open modal when URL changes
 
     const handleCreateClick = () => {
         setSelectedContact(null);

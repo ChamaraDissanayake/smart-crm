@@ -82,8 +82,6 @@ export const ChatArea = forwardRef<{ handleRemove: (fileName: string) => void },
 
         useImperativeHandle(ref, () => ({
             handleRemove: (fileName: string) => {
-                console.log('Chamara chat area', fileName);
-
                 attachmentHandlerRef.current?.handleRemove(fileName);
             }
         }));
